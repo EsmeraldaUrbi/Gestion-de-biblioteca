@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="980" viewBox="0 0 1600 980" role="img" aria-labelledby="title desc">
+<title id="title">Diagrama de casos de uso del Sistema de Gestión de Biblioteca</title>
+<desc id="desc">Estudiante y Docente consultan catálogo y disponibilidad y solicitan préstamos. Bibliotecario gestiona usuarios, libros, ejemplares y sanciones, y registra préstamos y devoluciones. Se muestran validaciones obligatorias y sanción por retraso condicional.</desc>
+<defs>
+  <marker id="arrow" markerWidth="11" markerHeight="9" refX="10" refY="4.5" orient="auto" markerUnits="userSpaceOnUse"><path d="M 1 1 L 10 4.5 L 1 8" fill="none" stroke="#60748a" stroke-width="1.7"/></marker>
+</defs>
+<style>
+  text{font-family:Arial,Helvetica,sans-serif;fill:#16324d}
+  .title{font-size:27px;font-weight:700}
+  .sub{font-size:15px;fill:#53687c}
+  .boundary{fill:#fff;stroke:#58718b;stroke-width:2}
+  .system{font-size:22px;font-weight:700}
+  .section{font-size:13px;font-weight:700;letter-spacing:1px;fill:#55718f}
+  .case{fill:#f4f9ff;stroke:#24547c;stroke-width:2}
+  .validation{fill:#f8fbfd;stroke:#637f96;stroke-width:1.8}
+  .conditional{fill:#fff9ed;stroke:#a67729;stroke-width:1.8}
+  .case-text{font-size:17px;font-weight:600;text-anchor:middle;dominant-baseline:middle}
+  .actor{stroke:#16324d;stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .actor-name{font-size:18px;font-weight:700;text-anchor:middle}
+  .assoc{stroke:#7d91a3;stroke-width:1.8;fill:none}
+  .relation{stroke:#60748a;stroke-width:1.9;fill:none;stroke-dasharray:7 5;marker-end:url(#arrow)}
+  .rel-label{font-size:13px;font-weight:700;fill:#4e657b;text-anchor:middle}
+  .small{font-size:13px;fill:#526b80;text-anchor:middle}
+  .footer{font-size:14px;fill:#526b80}
+</style>
+<rect width="1600" height="980" fill="#f5f7fa"/>
+<text class="title" x="64" y="43">Diagrama de casos de uso</text>
+<text class="sub" x="1535" y="42" text-anchor="end">Issue #5 · Documentación 1.1</text>
+<rect class="boundary" x="310" y="69" width="1000" height="839" rx="8"/>
+<text class="system" x="810" y="104" text-anchor="middle">Sistema de Gestión de Biblioteca</text>
+<path d="M345 121 H1275" stroke="#dbe5ed" stroke-width="1.5"/>
+<text class="section" x="560" y="149" text-anchor="middle">ESTUDIANTE Y DOCENTE</text>
+<text class="section" x="1050" y="149" text-anchor="middle">BIBLIOTECARIO</text>
+
+<!-- Asociaciones: actores y funciones visibles. -->
+<path class="assoc" d="M169 283 L402 215 M169 283 L402 350 M169 283 L402 485"/>
+<path class="assoc" d="M169 602 L402 215 M169 602 L402 350 M169 602 L402 485"/>
+<path class="assoc" d="M1407 430 L1222 210 M1407 430 L1222 310 M1407 430 L1222 410 M1407 430 L1222 510 M1407 430 L1222 610 M1407 430 L1222 710"/>
+
+<!-- Dependencias UML. Punta de flecha: caso obligatorio o caso base. -->
+<path class="relation" d="M560 531 L560 635"/>
+<path class="relation" d="M878 485 C820 535 780 600 719 653"/>
+<path class="relation" d="M879 523 C832 610 785 700 759 767"/>
+<path class="relation" d="M1225 810 C1280 774 1287 661 1224 610"/>
+<rect x="580" y="577" width="89" height="23" rx="5" fill="white"/><text class="rel-label" x="624" y="593">«include»</text>
+<rect x="761" y="580" width="89" height="23" rx="5" fill="white"/><text class="rel-label" x="805" y="596">«include»</text>
+<rect x="767" y="692" width="89" height="23" rx="5" fill="white"/><text class="rel-label" x="811" y="708">«include»</text>
+<rect x="1219" y="715" width="82" height="23" rx="5" fill="white"/><text class="rel-label" x="1260" y="731">«extend»</text>
+<text class="small" x="1259" y="750">[hay retraso]</text>
+
+<!-- Casos de uso. -->
+
+<ellipse class="case" cx="560" cy="215" rx="158" ry="43"/>
+<text class="case-text" x="560" y="215">Consultar catálogo</text>
+<ellipse class="case" cx="560" cy="350" rx="158" ry="43"/>
+<text class="case-text" x="560" y="350">Consultar disponibilidad</text>
+<ellipse class="case" cx="560" cy="485" rx="158" ry="43"/>
+<text class="case-text" x="560" y="485">Solicitar préstamo</text>
+<ellipse class="case" cx="1050" cy="210" rx="172" ry="43"/>
+<text class="case-text" x="1050" y="210">Gestionar usuarios</text>
+<ellipse class="case" cx="1050" cy="310" rx="172" ry="43"/>
+<text class="case-text" x="1050" y="310">Gestionar libros</text>
+<ellipse class="case" cx="1050" cy="410" rx="172" ry="43"/>
+<text class="case-text" x="1050" y="410">Gestionar ejemplares</text>
+<ellipse class="case" cx="1050" cy="510" rx="172" ry="43"/>
+<text class="case-text" x="1050" y="510">Registrar préstamo</text>
+<ellipse class="case" cx="1050" cy="610" rx="172" ry="43"/>
+<text class="case-text" x="1050" y="610">Registrar devolución</text>
+<ellipse class="case" cx="1050" cy="710" rx="172" ry="43"/>
+<text class="case-text" x="1050" y="710">Gestionar sanciones</text>
+<ellipse class="validation" cx="560" cy="680" rx="172" ry="43"/>
+<text class="case-text" x="560" y="668">Verificar</text>
+<text class="case-text" x="560" y="692">disponibilidad</text>
+<ellipse class="validation" cx="610" cy="810" rx="190" ry="43"/>
+<text class="case-text" x="610" y="798">Validar condiciones</text>
+<text class="case-text" x="610" y="822">de préstamo</text>
+<ellipse class="conditional" cx="1050" cy="825" rx="190" ry="43"/>
+<text class="case-text" x="1050" y="813">Registrar sanción</text>
+<text class="case-text" x="1050" y="837">por retraso</text>
+<circle class="actor" cx="125" cy="230" r="20"/>
+<path class="actor" d="M125 250 V308 M82 278 L168 278 M125 308 L92 354 M125 308 L158 354"/>
+<text class="actor-name" x="125" y="387">Estudiante</text>
+<circle class="actor" cx="125" cy="549" r="20"/>
+<path class="actor" d="M125 569 V627 M82 597 L168 597 M125 627 L92 673 M125 627 L158 673"/>
+<text class="actor-name" x="125" y="706">Docente</text>
+<circle class="actor" cx="1450" cy="377" r="20"/>
+<path class="actor" d="M1450 397 V455 M1407 425 L1493 425 M1450 455 L1417 501 M1450 455 L1483 501"/>
+<text class="actor-name" x="1450" y="534">Bibliotecario</text>
+<text class="footer" x="310" y="946">Línea continua: asociación · Flecha discontinua «include»: paso obligatorio · «extend»: condición indicada</text>
+</svg>
