@@ -1,0 +1,53 @@
+@startuml
+title Sistema de Gestión de Biblioteca — diagrama de casos de uso
+left to right direction
+skinparam shadowing false
+skinparam backgroundColor white
+skinparam usecase {
+  BackgroundColor #F5F9FF
+  BorderColor #234F77
+  FontColor #17324D
+}
+
+actor Estudiante as E
+actor Docente as D
+actor Bibliotecario as B
+
+rectangle "Sistema de Gestión de Biblioteca" {
+  usecase "Consultar catálogo" as Catalogo
+  usecase "Consultar disponibilidad" as Disponibilidad
+  usecase "Solicitar préstamo" as Solicitud
+  usecase "Gestionar usuarios" as Usuarios
+  usecase "Gestionar libros" as Libros
+  usecase "Gestionar ejemplares" as Ejemplares
+  usecase "Registrar préstamo" as Prestamo
+  usecase "Registrar devolución" as Devolucion
+  usecase "Gestionar sanciones" as Sanciones
+  usecase "Verificar disponibilidad" as Verificar
+  usecase "Validar condiciones de préstamo" as Validar
+  usecase "Registrar sanción por retraso" as RegistrarSancion
+}
+
+E -- Catalogo
+E -- Disponibilidad
+E -- Solicitud
+D -- Catalogo
+D -- Disponibilidad
+D -- Solicitud
+B -- Usuarios
+B -- Libros
+B -- Ejemplares
+B -- Prestamo
+B -- Devolucion
+B -- Sanciones
+
+Solicitud ..> Verificar : <<include>>
+Prestamo ..> Verificar : <<include>>
+Prestamo ..> Validar : <<include>>
+RegistrarSancion ..> Devolucion : <<extend>>\n[hay retraso]
+
+note bottom of Validar
+  Revisa límite de préstamos y
+  restricciones por sanciones vigentes.
+end note
+@enduml
