@@ -24,7 +24,7 @@ services:
     depends_on:
       - db
     # Mantiene el contenedor vivo mientras inicializamos Django
-    command: tail -f /dev/null 
+    command: python manage.py runserver 0.0.0.0:8000 
 
   frontend:
     build: ./frontend
@@ -38,7 +38,7 @@ services:
     depends_on:
       - backend
     # Mantiene el contenedor vivo mientras inicializamos Angular
-    command: tail -f /dev/null
+    command: ng serve --host 0.0.0.0 --poll 2000
 
 volumes:
   mysql_data:
