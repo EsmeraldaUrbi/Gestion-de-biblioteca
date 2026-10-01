@@ -17,6 +17,8 @@ services:
     build: ./backend
     container_name: biblioteca_backend
     restart: always
+    env_file:
+      - .env
     volumes:
       - ./backend:/app
     ports:
