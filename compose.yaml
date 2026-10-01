@@ -1,0 +1,44 @@
+services:
+  db:
+    image: mysql:8.4
+    container_name: biblioteca_db
+    restart: always
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+  backend:
+    build: ./backend
+    container_name: biblioteca_backend
+    restart: always
+    volumes:
+      - ./backend:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    # Mantiene el contenedor vivo mientras inicializamos Django
+    command: tail -f /dev/null 
+
+  frontend:
+    build: ./frontend
+    container_name: biblioteca_frontend
+    restart: always
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "4200:4200"
+    depends_on:
+      - backend
+    # Mantiene el contenedor vivo mientras inicializamos Angular
+    command: tail -f /dev/null
+
+volumes:
+  mysql_data:
