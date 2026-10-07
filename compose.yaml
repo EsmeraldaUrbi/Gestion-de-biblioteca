@@ -41,6 +41,6 @@ services:
       - backend
     # Mantiene el contenedor vivo mientras inicializamos Angular
     command: ng serve --host 0.0.0.0 --poll 2000
-
+      
 volumes:
   mysql_data:
