@@ -11,6 +11,12 @@ from biblioteca.presentation.test_views import (
     TestStatusView,
 )
 
+#Importaiones para ticket 3.2
+from biblioteca.presentation.usuarios_views import (
+    UsuariosListCreateView,
+    UsuarioDetailView,
+    RolesListView,
+)
 
 urlpatterns = [
     path(
@@ -47,5 +53,24 @@ urlpatterns = [
         'auth/access/lector/',
         AccesoLectorView.as_view(),
         name='auth-access-lector'
+    ),
+
+    #3.2
+    path(
+        'usuarios/',
+        UsuariosListCreateView.as_view(),
+        name='usuarios-list-create'
+    ),
+
+    path(
+        'usuarios/<int:usuario_id>/',
+        UsuarioDetailView.as_view(),
+        name='usuarios-detail'
+    ),
+
+    path(
+        'roles/',
+        RolesListView.as_view(),
+        name='roles-list'
     ),
 ]
