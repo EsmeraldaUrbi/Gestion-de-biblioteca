@@ -1,3 +1,7 @@
+from biblioteca.presentation.catalogo_views import (
+    CatalogoListView, CatalogoDetailView, CatalogoFiltrosView,
+)
+
 from django.urls import path
 
 from biblioteca.presentation.auth_views import (
@@ -73,4 +77,7 @@ urlpatterns = [
         RolesListView.as_view(),
         name='roles-list'
     ),
+    path('catalogo/', CatalogoListView.as_view(), name='catalogo-list'),
+    path('catalogo/filtros/', CatalogoFiltrosView.as_view(), name='catalogo-filtros'),
+    path('catalogo/<int:libro_id>/', CatalogoDetailView.as_view(), name='catalogo-detail'),
 ]

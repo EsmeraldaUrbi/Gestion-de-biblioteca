@@ -1,0 +1,525 @@
+{
+  "info": {
+    "name": "Biblioteca — Catálogo 3.4.2",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Seleccionar el environment Biblioteca Local. Ejecutar Estado, Login y Listado en orden. El login guarda el token en el environment; el listado selecciona el primer libro y sus primeros autor/categoría. Si no hay datos, cargar libros de demostración; detalle y filtros por ID requieren variables válidas. Las pruebas de ID inexistente asumen que 2147483647 no existe. Solo backend: no crea ni modifica libros. Credenciales de demostración: requieren seed_auth_demo."
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Consultas y autenticación",
+      "item": [
+        {
+          "name": "01 Estado del backend",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/estado/",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "02 Login y guardar token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/auth/login/",
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) { pm.environment.set(\"token\", pm.response.json().token); }"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "03 Listar y seleccionar primer libro",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/catalogo/"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) {",
+                  " const data = pm.response.json();",
+                  " pm.test(\"Listado paginado\", () => { pm.expect(data.results).to.be.an(\"array\"); pm.expect(data.count).to.be.a(\"number\"); });",
+                  " if (data.results.length) {",
+                  "  const b = data.results[0]; pm.environment.set(\"libro_id\", b.libro_id); pm.environment.set(\"titulo\", b.titulo);",
+                  "  pm.environment.set(\"autor_id\", b.autores.length ? b.autores[0].autor_id : \"\");",
+                  "  pm.environment.set(\"categoria_id\", b.categorias.length ? b.categorias[0].categoria_id : \"\");",
+                  " } else { [\"libro_id\", \"autor_id\", \"categoria_id\", \"titulo\"].forEach(k => pm.environment.set(k, \"\")); console.warn(\"Catálogo vacío: cargar libros antes de probar detalle y filtros por ID.\"); }",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "04 Opciones de filtros",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/catalogo/filtros/"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "05 Detalle del libro seleccionado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/catalogo/{{libro_id}}/"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Por título",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/catalogo/?titulo={{titulo}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Por autor",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/catalogo/?autor={{autor_id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Por categoría",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/catalogo/?categoria={{categoria_id}}"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Filtros combinados",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/catalogo/?titulo={{titulo}}&autor={{autor_id}}&categoria={{categoria_id}}&disponible=true"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Paginación",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/catalogo/?page=1&page_size=2"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sin coincidencias",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/catalogo/?titulo=ZZZ_SIN_COINCIDENCIAS"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Disponibilidad true",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/catalogo/?disponible=true"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) pm.test(\"Disponibilidad correcta\", () => pm.response.json().results.forEach(b => pm.expect(b.stock_disponible > 0).to.eql(true)));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Disponibilidad false",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/catalogo/?disponible=false"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "if (pm.response.code === 200) pm.test(\"Disponibilidad correcta\", () => pm.response.json().results.forEach(b => pm.expect(b.stock_disponible === 0).to.eql(true)));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Validaciones y permisos",
+      "item": [
+        {
+          "name": "Autor inválido",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/catalogo/?autor=abc"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Categoría inválida",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/catalogo/?categoria=0"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Disponibilidad inválida",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/catalogo/?disponible=quizas"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Página inválida",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/catalogo/?page=0"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Tamaño excesivo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/catalogo/?page_size=101"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Libro inexistente (ID reservado para prueba)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/catalogo/2147483647/"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Autor inexistente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/catalogo/?autor=2147483647"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sin autenticación",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/catalogo/",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Token inválido",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/catalogo/",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "invalido",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Escritura no permitida",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/catalogo/",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 405\", () => pm.response.to.have.status(405));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
