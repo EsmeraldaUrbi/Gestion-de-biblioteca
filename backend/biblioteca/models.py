@@ -172,6 +172,12 @@ class LibroAutor(models.Model):
 
     class Meta:
         db_table = 'biblioteca_libros_autores'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['libro', 'autor'],
+                name='unique_libro_autor'
+            )
+        ]
 
 
 class CategoriaLibro(models.Model):
@@ -189,6 +195,18 @@ class CategoriaLibro(models.Model):
 
     class Meta:
         db_table = 'biblioteca_categoria_libros'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['libro', 'categoria'],
+                name='unique_libro_categoria'
+            )
+        ]
+
+
+class EstadoEjemplar(models.TextChoices):
+    ACTIVO = 'ACTIVO', 'Activo'
+    MANTENIMIENTO = 'MANTENIMIENTO', 'Mantenimiento'
+    BAJA = 'BAJA', 'Baja'
 
 
 class Ejemplar(models.Model):
@@ -201,11 +219,14 @@ class Ejemplar(models.Model):
     )
 
     codigo_inventario = models.CharField(
-        max_length=15
+        max_length=15,
+        unique=True
     )
 
     estado = models.CharField(
-        max_length=15
+        max_length=15,
+        choices=EstadoEjemplar.choices,
+        default=EstadoEjemplar.ACTIVO
     )
 
     def __str__(self):
