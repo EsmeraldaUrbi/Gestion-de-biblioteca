@@ -1,0 +1,73 @@
+.welcome-section {
+  max-width: 760px;
+  padding: 34px;
+  background: #ffffff;
+  border: 1px solid #e5eaf2;
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgb(20 35 60 / 5%);
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: #0765d8;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+h1 {
+  margin: 0;
+  color: #0c1d35;
+  font-size: clamp(27px, 4vw, 36px);
+  line-height: 1.15;
+}
+
+.welcome-text {
+  max-width: 650px;
+  margin: 16px 0 0;
+  color: #586477;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.session-card {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-top: 28px;
+}
+
+.session-card div {
+  padding: 16px;
+  background: #f4f7fc;
+  border-radius: 9px;
+}
+
+.session-card span,
+.session-card strong {
+  display: block;
+}
+
+.session-card span {
+  color: #788396;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.session-card strong {
+  margin-top: 5px;
+  color: #14243b;
+  font-size: 13px;
+}
+
+@media (max-width: 600px) {
+  .welcome-section {
+    padding: 24px 20px;
+  }
+
+  .session-card {
+    grid-template-columns: 1fr;
+  }
+}

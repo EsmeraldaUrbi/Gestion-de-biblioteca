@@ -1,1 +1,32 @@
-<p>inicio works!</p>
+<section class="welcome-section">
+  <p class="eyebrow">
+    Sistema Integrado de Gestión Bibliotecaria
+  </p>
+
+  <h1>
+    Bienvenido, {{ session.usuario()?.nombre }}
+  </h1>
+
+  <p class="welcome-text">
+    Has iniciado sesión correctamente con el perfil
+    <strong>{{ roleLabel() }}</strong>.
+    Las opciones disponibles en la navegación corresponden
+    a los permisos de tu cuenta.
+  </p>
+
+  <div class="session-card">
+    <div>
+      <span>Correo institucional</span>
+      <strong>
+        {{ session.usuario()?.email }}
+      </strong>
+    </div>
+
+    <div>
+      <span>Rol</span>
+      <strong>
+        {{ roleLabel() }}
+      </strong>
+    </div>
+  </div>
+</section>

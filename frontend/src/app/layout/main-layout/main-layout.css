@@ -1,0 +1,159 @@
+:host {
+  display: block;
+  min-height: 100dvh;
+}
+
+.application-shell {
+  min-height: 100dvh;
+  background: #f6f8fc;
+}
+
+.main-header {
+  background: #ffffff;
+  border-bottom: 1px solid #e3e8f1;
+  box-shadow: 0 2px 8px rgb(20 35 60 / 4%);
+}
+
+.header-content {
+  max-width: 1240px;
+  min-height: 72px;
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.brand {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+}
+
+.brand img {
+  display: block;
+  width: auto;
+  max-width: 150px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.main-navigation {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  overflow-x: auto;
+}
+
+.navigation-item {
+  flex: 0 0 auto;
+  padding: 10px 11px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #334055;
+  font: inherit;
+  font-size: 13px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.navigation-item:hover {
+  background: #eef3fb;
+  color: #0b5fca;
+}
+
+.navigation-item--pending {
+  color: #647084;
+}
+
+.user-area {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.user-information {
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+}
+
+.user-information strong {
+  max-width: 210px;
+  overflow: hidden;
+  color: #142238;
+  font-size: 12.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.user-information span {
+  margin-top: 2px;
+  color: #6a7587;
+  font-size: 11.5px;
+}
+
+.logout-button {
+  padding: 8px 12px;
+  border: 1px solid #d9e0eb;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #1f3048;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.logout-button:hover:not(:disabled) {
+  background: #f2f5fa;
+}
+
+.logout-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.main-content {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 34px 24px;
+}
+
+@media (max-width: 900px) {
+  .header-content {
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
+
+  .main-navigation {
+    order: 3;
+    width: 100%;
+    flex-basis: 100%;
+  }
+
+  .user-area {
+    margin-left: auto;
+  }
+}
+
+@media (max-width: 600px) {
+  .user-information {
+    display: none;
+  }
+
+  .brand img {
+    max-width: 120px;
+  }
+
+  .header-content,
+  .main-content {
+    padding-right: 16px;
+    padding-left: 16px;
+  }
+}

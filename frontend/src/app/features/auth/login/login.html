@@ -1,0 +1,344 @@
+<div class="login-page">
+  <section class="login-card">
+    <div class="login-main">
+      <header class="brand-section">
+        <img
+          class="brand-isotype"
+          src="assets/brand/bibliotech-isotipo.png"
+          alt=""
+        />
+
+        <h1>BiblioTech</h1>
+
+        <p class="brand-subtitle">
+          Sistema Integrado de Gestión Bibliotecaria
+        </p>
+
+        <p class="institution">
+          <span class="institution-dot"></span>
+          Universidad Central
+        </p>
+      </header>
+
+      <div
+        class="role-selector"
+        aria-label="Seleccionar tipo de usuario"
+      >
+        @for (role of roles; track role.value) {
+          <button
+            type="button"
+            class="role-tab"
+            [class.role-tab--active]="
+              selectedRole() === role.value
+            "
+            (click)="selectRole(role.value)"
+          >
+            @switch (role.value) {
+              @case ('estudiante') {
+                <svg
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M3 10.5 12 6l9 4.5-9 4.5-9-4.5Z"
+                  />
+                  <path
+                    d="M7 12.5v4.2c2.9 1.8 7.1 1.8 10 0v-4.2"
+                  />
+                </svg>
+              }
+
+              @case ('docente') {
+                <svg
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <circle
+                    cx="12"
+                    cy="9"
+                    r="4"
+                  />
+                  <path
+                    d="M6.5 20v-2.5A5.5 5.5 0 0 1 12 12h0a5.5 5.5 0 0 1 5.5 5.5V20"
+                  />
+                  <path
+                    d="M9 17h6"
+                  />
+                </svg>
+              }
+
+              @case ('bibliotecario') {
+                <svg
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M5 7.5 12 11l7-3.5V18l-7 3-7-3V7.5Z"
+                  />
+                  <path
+                    d="M12 11v10"
+                  />
+                  <path
+                    d="M9 5.5 12 3l3 2.5"
+                  />
+                </svg>
+              }
+            }
+
+            <span>{{ role.label }}</span>
+          </button>
+        }
+      </div>
+
+      <form
+        class="login-form"
+        [formGroup]="loginForm"
+        (ngSubmit)="submit()"
+        novalidate
+      >
+        <div class="form-group">
+          <div class="label-row">
+        <label for="email">
+          Correo Institucional
+        </label>
+      </div>
+
+          <div
+            class="input-shell"
+            [class.input-shell--invalid]="
+              loginForm.controls.email.invalid &&
+              loginForm.controls.email.touched
+            "
+          >
+            <svg
+              class="input-icon"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <rect
+                x="4"
+                y="5"
+                width="16"
+                height="15"
+                rx="2"
+              />
+              <circle
+                cx="9"
+                cy="11"
+                r="2"
+              />
+              <path
+                d="M6.5 17c.7-2 4.3-2 5 0"
+              />
+              <path
+                d="M14 10h3.5M14 14h3.5"
+              />
+              <path
+                d="M9 5V3h6v2"
+              />
+            </svg>
+
+            <input
+              id="email"
+              type="email"
+              formControlName="email"
+              autocomplete="username"
+              placeholder="ej. usuario@universidad.edu"
+            />
+          </div>
+
+          @if (
+            loginForm.controls.email.invalid &&
+            loginForm.controls.email.touched
+          ) {
+            <p class="field-error">
+              Ingresa un correo institucional válido.
+            </p>
+          }
+        </div>
+
+        <div class="form-group">
+          <label for="password">
+            Contraseña de Acceso
+          </label>
+
+          <div
+            class="input-shell"
+            [class.input-shell--invalid]="
+              loginForm.controls.password.invalid &&
+              loginForm.controls.password.touched
+            "
+          >
+            <svg
+              class="input-icon"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <rect
+                x="6"
+                y="10"
+                width="12"
+                height="10"
+                rx="2"
+              />
+              <path
+                d="M8.5 10V7a3.5 3.5 0 0 1 7 0v3"
+              />
+              <circle
+                cx="12"
+                cy="15"
+                r="1"
+              />
+            </svg>
+
+            <input
+              id="password"
+              [type]="
+                passwordVisible()
+                  ? 'text'
+                  : 'password'
+              "
+              formControlName="password"
+              autocomplete="current-password"
+              placeholder="••••••••••••"
+            />
+
+            <button
+              type="button"
+              class="password-toggle"
+              aria-label="Mostrar u ocultar contraseña"
+              (click)="togglePassword()"
+            >
+              @if (passwordVisible()) {
+                <svg
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6Z"
+                  />
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="3"
+                  />
+                  <path
+                    d="m4 4 16 16"
+                  />
+                </svg>
+              } @else {
+                <svg
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6Z"
+                  />
+                  <circle
+                    cx="12"
+                    cy="12"
+                    r="3"
+                  />
+                </svg>
+              }
+            </button>
+          </div>
+
+          @if (
+            loginForm.controls.password.invalid &&
+            loginForm.controls.password.touched
+          ) {
+            <p class="field-error">
+              Ingresa tu contraseña.
+            </p>
+          }
+        </div>
+
+        <div class="form-options">
+          <label class="remember-option">
+            <input
+              type="checkbox"
+              formControlName="recordar"
+            />
+            <span>
+              Recordar sesión en este equipo
+            </span>
+          </label>
+
+          <button
+            type="button"
+            class="forgot-button"
+            (click)="showRecoveryMessage()"
+          >
+            Olvidé mi contraseña
+          </button>
+        </div>
+
+        @if (message()) {
+          <div
+            class="auth-message"
+            [class.auth-message--info]="
+              messageType() === 'info'
+            "
+            role="alert"
+          >
+            {{ message() }}
+          </div>
+        }
+
+        <button
+          class="submit-button"
+          type="submit"
+          [disabled]="loading()"
+        >
+          @if (loading()) {
+            <span class="spinner"></span>
+            <span>Validando acceso...</span>
+          } @else {
+            <span>
+              Iniciar Sesión en Biblioteca
+            </span>
+
+            <svg
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path d="M5 12h13" />
+              <path d="m14 7 5 5-5 5" />
+            </svg>
+          }
+        </button>
+      </form>
+    </div>
+
+    <footer class="support-section">
+      <p class="support-title">
+        <svg
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <circle
+            cx="12"
+            cy="12"
+            r="9"
+          />
+          <path d="M12 11v5" />
+          <circle
+            cx="12"
+            cy="8"
+            r="0.8"
+            class="fill-current"
+          />
+        </svg>
+
+        Atención Presencial
+      </p>
+
+      <p class="support-text">
+        Para credenciales de nuevo ingreso o reposición de acceso,
+        acércate al mostrador de servicios bibliotecarios con tu carnet
+        vigente.
+      </p>
+    </footer>
+  </section>
+</div>

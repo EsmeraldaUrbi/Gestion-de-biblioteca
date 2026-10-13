@@ -1,0 +1,72 @@
+<div class="application-shell">
+  <header class="main-header">
+    <div class="header-content">
+      <a
+        class="brand"
+        routerLink="/inicio"
+        aria-label="Ir al inicio"
+      >
+        <img
+          src="assets/brand/bibliotech-logo.png"
+          alt="BiblioTech"
+        />
+      </a>
+
+      <nav
+        class="main-navigation"
+        aria-label="Navegación principal"
+      >
+        @for (
+          item of visibleNavigation();
+          track item.label
+        ) {
+          @if (item.route) {
+            <a
+              class="navigation-item"
+              [routerLink]="item.route"
+            >
+              {{ item.label }}
+            </a>
+          } @else {
+            <button
+              type="button"
+              class="navigation-item navigation-item--pending"
+              title="Este módulo será integrado por el equipo correspondiente"
+            >
+              {{ item.label }}
+            </button>
+          }
+        }
+      </nav>
+
+      <div class="user-area">
+        <div class="user-information">
+          <strong>
+            {{ session.usuario()?.nombre }}
+          </strong>
+
+          <span>
+            {{ roleLabel() }}
+          </span>
+        </div>
+
+        <button
+          type="button"
+          class="logout-button"
+          [disabled]="loggingOut()"
+          (click)="logout()"
+        >
+          {{
+            loggingOut()
+              ? 'Cerrando...'
+              : 'Cerrar sesión'
+          }}
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+    <router-outlet></router-outlet>
+  </main>
+</div>

@@ -1,39 +1,37 @@
-import { Component, OnInit, inject, PLATFORM_ID, ChangeDetectorRef } from '@angular/core';
-import { CommonModule, isPlatformBrowser } from '@angular/common';
-import { ApiService } from '../../core/services/api';
+import {
+  Component,
+  computed,
+  inject,
+} from '@angular/core';
+
+import {
+  UserRole,
+} from '../../core/auth/models/auth.models';
+import { AuthSessionService } from '../../core/auth/services/auth-session.service';
 
 @Component({
   selector: 'app-inicio',
   standalone: true,
-  imports: [CommonModule],
-  template: `
-    <div style="padding: 20px; font-family: sans-serif;">
-      <h1>Sistema de Gestión de Biblioteca</h1>
-      <div style="padding: 15px; background: #e0f7fa; border-radius: 5px;">
-        <strong>Respuesta de Django:</strong> {{ mensajeBackend }}
-      </div>
-    </div>
-  `
+  templateUrl: './inicio.html',
+  styleUrl: './inicio.css',
 })
-export class InicioComponent implements OnInit {
-  private apiService = inject(ApiService);
-  private platformId = inject(PLATFORM_ID);
-  private cdr = inject(ChangeDetectorRef); // Inyectamos el detector de cambios
-  mensajeBackend = 'Cargando...';
+export class InicioComponent {
+  readonly session =
+    inject(AuthSessionService);
 
-  ngOnInit() {
-    if (isPlatformBrowser(this.platformId)) {
-      this.apiService.getSystemStatus().subscribe({
-        next: (res: any) => {
-          this.mensajeBackend = res.message;
-          this.cdr.detectChanges(); // Forzamos a Angular a pintar el texto en la pantalla inmediatamente
-        },
-        error: (err) => {
-          console.error("Error en la petición:", err);
-          this.mensajeBackend = 'Error al conectar con el backend';
-          this.cdr.detectChanges();
-        }
-      });
-    }
-  }
+  readonly roleLabel =
+    computed(() => {
+      const role = this.session.rol();
+
+      const labels:
+        Record<UserRole, string> = {
+          estudiante: 'Estudiante',
+          docente: 'Docente',
+          bibliotecario: 'Bibliotecario',
+        };
+
+      return role
+        ? labels[role]
+        : '';
+    });
 }
