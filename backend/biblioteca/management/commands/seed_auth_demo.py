@@ -36,24 +36,18 @@ class Command(BaseCommand):
 
     USUARIOS = [
         {
-            'nombre': 'Estudiante Demo',
-            'email': (
-                'estudiante@bibliotech.local'
-            ),
+            'nombre': 'Esmeralda Urbina Cinto',
+            'email': 'esme@bibliotech.com',
             'rol': 'estudiante',
         },
         {
-            'nombre': 'Docente Demo',
-            'email': (
-                'docente@bibliotech.local'
-            ),
+            'nombre': 'Josué Saúl Torres Zamora',
+            'email': 'saul@bibliotech.com',
             'rol': 'docente',
         },
         {
-            'nombre': 'Bibliotecario Demo',
-            'email': (
-                'bibliotecario@bibliotech.local'
-            ),
+            'nombre': 'Kaltum Abdala Viveros Gómez',
+            'email': 'kalt@bibliotech.com',
             'rol': 'bibliotecario',
         },
     ]
@@ -143,17 +137,10 @@ class Command(BaseCommand):
             'Credenciales de prueba:'
         )
 
-        self.stdout.write(
-            'estudiante@bibliotech.local'
-        )
-
-        self.stdout.write(
-            'docente@bibliotech.local'
-        )
-
-        self.stdout.write(
-            'bibliotecario@bibliotech.local'
-        )
+        for usuario_data in self.USUARIOS:
+            self.stdout.write(
+                usuario_data['email']
+            )
 
         self.stdout.write(
             f'Contraseña: {self.PASSWORD_DEMO}'
