@@ -61,12 +61,32 @@ class UsuarioService:
         return usuario
 
     def listar_roles(self):
-        return self.rol_repository.listar()
+        roles_permitidos = {
+            'estudiante',
+            'docente',
+            'bibliotecario',
+        }
+
+        return [
+            rol
+            for rol in self.rol_repository.listar()
+            if rol.nombre.strip().casefold() in roles_permitidos
+        ]
 
     def obtener_rol(self, rol_id):
         rol = self.rol_repository.obtener_por_id(rol_id)
 
-        if rol is None:
+        roles_permitidos = {
+            'estudiante',
+            'docente',
+            'bibliotecario',
+        }
+
+        if (
+            rol is None
+            or rol.nombre.strip().casefold()
+            not in roles_permitidos
+        ):
             raise RolNoEncontradoError()
 
         return rol

@@ -307,3 +307,101 @@ class UsuariosApiTests(APITestCase):
             self.estudiante.rol_id,
             self.roles['estudiante'].rol_id
         )
+
+    def test_listar_usuarios_con_token_real(self):
+        login = self.client.post(
+            reverse('auth-login'),
+            {
+                'email': self.bibliotecario.email,
+                'password': self.PASSWORD,
+            },
+            format='json'
+        )
+
+        self.assertEqual(login.status_code, 200)
+        self.assertIn('token', login.data)
+
+        token = login.data['token']
+
+        self.client.credentials(
+            HTTP_AUTHORIZATION=f'Bearer {token}'
+        )
+
+        respuesta = self.client.get(self.url_lista)
+
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertEqual(respuesta.data['count'], 3)
+
+    def test_registro_rechaza_rol_no_permitido(self):
+        self.autenticar(self.bibliotecario)
+
+        otro_rol = Rol.objects.create(
+            nombre='administrador',
+            limite_prestamos_activos=0
+        )
+
+        datos = self.datos_registro()
+        datos['rol_id'] = otro_rol.rol_id
+
+        respuesta = self.client.post(
+            self.url_lista,
+            datos,
+            format='json'
+        )
+
+        self.assertEqual(respuesta.status_code, 400)
+
+        self.assertFalse(
+            Usuario.objects.filter(
+                email='ana@test.local'
+            ).exists()
+        )
+
+    def test_modificacion_rechaza_rol_no_permitido(self):
+        self.autenticar(self.bibliotecario)
+
+        otro_rol = Rol.objects.create(
+            nombre='administrador',
+            limite_prestamos_activos=0
+        )
+
+        respuesta = self.client.patch(
+            reverse(
+                'usuarios-detail',
+                kwargs={
+                    'usuario_id': self.estudiante.usuario_id
+                }
+            ),
+            {'rol_id': otro_rol.rol_id},
+            format='json'
+        )
+
+        self.assertEqual(respuesta.status_code, 400)
+
+        self.estudiante.refresh_from_db()
+
+        self.assertEqual(
+            self.estudiante.rol_id,
+            self.roles['estudiante'].rol_id
+        )
+    def test_listado_roles_excluye_roles_no_permitidos(self):
+        self.autenticar(self.bibliotecario)
+
+        Rol.objects.create(
+            nombre='administrador',
+            limite_prestamos_activos=0
+        )
+
+        respuesta = self.client.get(self.url_roles)
+
+        self.assertEqual(respuesta.status_code, 200)
+
+        nombres = {
+            rol['nombre']
+            for rol in respuesta.data
+        }
+
+        self.assertEqual(
+            nombres,
+            {'estudiante', 'docente', 'bibliotecario'}
+        )
