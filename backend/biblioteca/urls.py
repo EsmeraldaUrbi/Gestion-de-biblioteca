@@ -27,6 +27,10 @@ from biblioteca.presentation.libros_views import (
     LibrosListCreateView,
     LibroDetailView,
 )
+from biblioteca.presentation.ejemplares_views import (
+    EjemplaresListCreateView,
+    EjemplarDetailView,
+)
 
 urlpatterns = [
     path(
@@ -87,7 +91,9 @@ urlpatterns = [
     path('catalogo/filtros/', CatalogoFiltrosView.as_view(), name='catalogo-filtros'),
     path('catalogo/<int:libro_id>/', CatalogoDetailView.as_view(), name='catalogo-detail'),
 
-    # 3.3 Libros
+    # 3.3 Libros y Ejemplares
     path('libros/', LibrosListCreateView.as_view(), name='libros-list-create'),
     path('libros/<int:libro_id>/', LibroDetailView.as_view(), name='libros-detail'),
+    path('ejemplares/', EjemplaresListCreateView.as_view(), name='ejemplares-list-create'),
+    path('ejemplares/<int:ejemplar_id>/', EjemplarDetailView.as_view(), name='ejemplares-detail'),
 ]
