@@ -1,0 +1,142 @@
+:host {
+  display: block;
+}
+
+.nuevo-usuario-page {
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: 26px;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 26px;
+  color: #0765d8;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: #0765d8;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+h1 {
+  margin: 0 0 10px;
+  color: #142238;
+  font-size: clamp(26px, 4vw, 34px);
+}
+
+.description,
+.form-intro {
+  color: #647084;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.description {
+  margin: 0;
+}
+
+.form-card {
+  padding: 28px;
+  border: 1px solid #e3e8f1;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 4px 16px rgb(20 35 60 / 4%);
+}
+
+.form-card h2 {
+  margin: 0 0 8px;
+  color: #142238;
+  font-size: 19px;
+}
+
+.form-intro {
+  margin: 0 0 28px;
+}
+
+.state-message {
+  padding: 24px;
+  color: #647084;
+  text-align: center;
+}
+
+.error-banner {
+  padding: 14px 16px;
+  margin-bottom: 24px;
+  border: 1px solid #f0c6c6;
+  border-radius: 8px;
+  background: #fff4f4;
+  color: #9c2727;
+  font-size: 13px;
+}
+
+.error-banner p {
+  margin: 0 0 12px;
+}
+
+.error-banner button {
+  padding: 8px 14px;
+  border: 1px solid #e2b0b0;
+  border-radius: 6px;
+  background: #fff;
+  color: #9c2727;
+  cursor: pointer;
+}
+
+.success-card {
+  text-align: center;
+}
+
+.success-card p {
+  color: #586477;
+  line-height: 1.6;
+}
+
+.success-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 20px;
+  border-radius: 50%;
+  background: #e8f7ec;
+  color: #20733d;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.primary-link {
+  display: inline-block;
+  margin-top: 18px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  background: #0765d8;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.primary-link:hover {
+  background: #0754b3;
+}
+
+@media (max-width: 650px) {
+  .form-card {
+    padding: 20px;
+  }
+}

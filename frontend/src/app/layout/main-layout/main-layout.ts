@@ -87,6 +87,7 @@ export class MainLayoutComponent
       },
       {
         label: 'Usuarios',
+        route: '/usuarios',
         roles: [
           'bibliotecario',
         ],

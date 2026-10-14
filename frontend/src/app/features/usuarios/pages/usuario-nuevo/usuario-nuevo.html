@@ -1,0 +1,70 @@
+<section class="nuevo-usuario-page">
+  <header class="page-header">
+    <a routerLink="/usuarios" class="back-link">
+      ← Volver a usuarios
+    </a>
+
+    <p class="eyebrow">Administración de biblioteca</p>
+    <h1>Registrar nuevo usuario</h1>
+    <p class="description">
+      Captura la información del usuario y asigna
+      uno de los roles autorizados.
+    </p>
+  </header>
+
+  @if (usuarioCreado(); as usuario) {
+    <div class="form-card success-card" role="status">
+      <div class="success-icon">✓</div>
+      <h2>Usuario registrado correctamente</h2>
+      <p>
+        La cuenta de <strong>{{ usuario.nombre }}</strong>
+        se registró en el sistema.
+      </p>
+      <p>
+        <strong>Correo:</strong> {{ usuario.email }}
+      </p>
+      <p>
+        <strong>Rol:</strong> {{ usuario.rol.nombre }}
+      </p>
+
+      <a routerLink="/usuarios" class="primary-link">
+        Volver al listado
+      </a>
+    </div>
+  } @else {
+    <div class="form-card">
+      <h2>Datos del usuario</h2>
+      <p class="form-intro">
+        Los campos marcados con * son obligatorios.
+      </p>
+
+      @if (cargandoRoles()) {
+        <p class="state-message" role="status">
+          Cargando roles disponibles...
+        </p>
+      } @else if (errorRoles()) {
+        <div class="error-banner" role="alert">
+          <p>{{ errorRoles() }}</p>
+          <button type="button" (click)="cargarRoles()">
+            Reintentar
+          </button>
+        </div>
+      } @else {
+        @if (errorGeneral()) {
+          <p class="error-banner" role="alert">
+            {{ errorGeneral() }}
+          </p>
+        }
+
+        <app-usuario-form
+          modo="crear"
+          [roles]="roles()"
+          [guardando]="guardando()"
+          [erroresServidor]="erroresServidor()"
+          (guardar)="registrarUsuario($event)"
+          (cancelar)="volver()"
+        />
+      }
+    </div>
+  }
+</section>

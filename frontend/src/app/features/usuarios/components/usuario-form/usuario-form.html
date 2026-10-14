@@ -1,0 +1,133 @@
+<form
+  class="usuario-form"
+  [formGroup]="formulario"
+  (ngSubmit)="enviarFormulario()"
+  novalidate
+>
+  <div class="form-grid">
+    <div class="field">
+      <label for="usuario-nombre">Nombre completo *</label>
+      <input
+        id="usuario-nombre"
+        type="text"
+        formControlName="nombre"
+        maxlength="100"
+        autocomplete="name"
+        [attr.aria-invalid]="!!errorCampo('nombre')"
+      />
+      @if (errorCampo('nombre'); as mensaje) {
+        <small class="field-error">{{ mensaje }}</small>
+      }
+    </div>
+
+    <div class="field">
+      <label for="usuario-email">Correo electrónico *</label>
+      <input
+        id="usuario-email"
+        type="email"
+        formControlName="email"
+        maxlength="50"
+        autocomplete="email"
+        [attr.aria-invalid]="!!errorCampo('email')"
+      />
+      @if (errorCampo('email'); as mensaje) {
+        <small class="field-error">{{ mensaje }}</small>
+      }
+    </div>
+
+    <div class="field">
+      <label for="usuario-telefono">Teléfono</label>
+      <input
+        id="usuario-telefono"
+        type="tel"
+        formControlName="telefono"
+        maxlength="15"
+        autocomplete="tel"
+      />
+      @if (errorCampo('telefono'); as mensaje) {
+        <small class="field-error">{{ mensaje }}</small>
+      }
+    </div>
+
+    <div class="field">
+      <label for="usuario-rol">Rol *</label>
+      <select id="usuario-rol" formControlName="rol_id">
+        <option [ngValue]="0">Selecciona un rol</option>
+        @for (rol of roles; track rol.rol_id) {
+          <option [ngValue]="rol.rol_id">
+            {{ rol.nombre }}
+          </option>
+        }
+      </select>
+      @if (errorCampo('rol_id'); as mensaje) {
+        <small class="field-error">{{ mensaje }}</small>
+      }
+    </div>
+
+    <div class="field field--full">
+      <label for="usuario-direccion">Dirección</label>
+      <input
+        id="usuario-direccion"
+        type="text"
+        formControlName="direccion"
+        maxlength="255"
+        autocomplete="street-address"
+      />
+      @if (errorCampo('direccion'); as mensaje) {
+        <small class="field-error">{{ mensaje }}</small>
+      }
+    </div>
+
+    @if (modo === 'crear') {
+      <div class="field field--full">
+        <label for="usuario-password">Contraseña inicial *</label>
+        <div class="password-field">
+          <input
+            id="usuario-password"
+            [type]="mostrarContrasena() ? 'text' : 'password'"
+            formControlName="password"
+            autocomplete="new-password"
+          />
+          <button
+            type="button"
+            class="password-toggle"
+            (click)="mostrarContrasena.set(!mostrarContrasena())"
+          >
+            {{ mostrarContrasena() ? 'Ocultar' : 'Mostrar' }}
+          </button>
+        </div>
+        <small class="field-help">
+          Mínimo 8 caracteres. 
+        </small>
+        @if (errorCampo('password'); as mensaje) {
+          <small class="field-error">{{ mensaje }}</small>
+        }
+      </div>
+    }
+  </div>
+
+  <p class="required-note">* Campos obligatorios</p>
+
+  <div class="form-actions">
+    <button
+      type="button"
+      class="cancel-button"
+      [disabled]="guardando"
+      (click)="cancelar.emit()"
+    >
+      Cancelar
+    </button>
+
+    <button
+      type="submit"
+      class="save-button"
+      [disabled]="guardando || formulario.invalid"
+    >
+      @if (guardando) {
+        Guardando...
+      } @else {
+        {{ modo === 'crear' ? 'Registrar usuario' : 'Guardar cambios' }}
+      }
+    </button>
+  </div>
+</form>

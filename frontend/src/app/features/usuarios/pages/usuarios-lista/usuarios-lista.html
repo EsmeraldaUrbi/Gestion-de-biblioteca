@@ -1,0 +1,125 @@
+<section class="usuarios-page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Administración de biblioteca</p>
+      <h1>Gestión de usuarios</h1>
+      <p class="description">
+        Consulta las cuentas registradas y sus roles.
+      </p>
+    </div>
+
+    <div class="header-actions">
+      <span class="role-label">Bibliotecario</span>
+
+      <a routerLink="/usuarios/nuevo" class="primary-button">
+        + Nuevo usuario
+      </a>
+    </div>
+  </header>
+
+  <div class="summary-card">
+    <span>Total de usuarios registrados</span>
+    <strong>{{ total() }}</strong>
+  </div>
+
+  <section class="table-card" aria-label="Listado de usuarios">
+    <header class="table-header">
+      <div>
+        <h2>Usuarios registrados</h2>
+        <p>Información obtenida del sistema de biblioteca.</p>
+      </div>
+    </header>
+
+    @if (cargando()) {
+      <p class="state-message" role="status">
+        Cargando usuarios...
+      </p>
+    } @else if (error()) {
+      <div class="state-message state-message--error" role="alert">
+        <p>{{ error() }}</p>
+
+        <button
+          type="button"
+          class="secondary-button"
+          (click)="cargarUsuarios(pagina())"
+        >
+          Reintentar
+        </button>
+      </div>
+    } @else if (usuarios().length === 0) {
+      <p class="state-message">
+        Aún no hay usuarios registrados.
+      </p>
+    } @else {
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">ID</th>
+              <th scope="col">Nombre</th>
+              <th scope="col">Correo electrónico</th>
+              <th scope="col">Rol</th>
+              <th scope="col">Teléfono</th>
+              <th scope="col">Acciones</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (usuario of usuarios(); track usuario.usuario_id) {
+              <tr>
+                <td>{{ usuario.usuario_id }}</td>
+                <td class="user-name">{{ usuario.nombre }}</td>
+                <td>{{ usuario.email }}</td>
+                <td>
+                  <span class="role-chip">
+                    {{ usuario.rol.nombre }}
+                  </span>
+                </td>
+                <td>{{ usuario.telefono || 'No registrado' }}</td>
+                <td>
+                  <a
+                    [routerLink]="['/usuarios', usuario.usuario_id]"
+                    class="detail-link"
+                  >
+                    Ver detalles
+                  </a>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <footer class="pagination">
+        <p>
+          Mostrando {{ primerRegistro() }}–{{ ultimoRegistro() }}
+          de {{ total() }} usuarios
+        </p>
+
+        <div class="pagination-controls">
+          <button
+            type="button"
+            class="secondary-button"
+            [disabled]="pagina() === 1 || cargando()"
+            (click)="cargarUsuarios(pagina() - 1)"
+          >
+            Anterior
+          </button>
+
+          <span>
+            Página {{ pagina() }} de {{ totalPaginas() }}
+          </span>
+
+          <button
+            type="button"
+            class="secondary-button"
+            [disabled]="pagina() >= totalPaginas() || cargando()"
+            (click)="cargarUsuarios(pagina() + 1)"
+          >
+            Siguiente
+          </button>
+        </div>
+      </footer>
+    }
+  </section>
+</section>

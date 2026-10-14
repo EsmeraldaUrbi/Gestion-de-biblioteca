@@ -1,0 +1,102 @@
+<section class="editar-page">
+  <header class="page-header">
+    <a routerLink="/usuarios" class="back-link">
+      ← Volver a usuarios
+    </a>
+
+    <p class="eyebrow">Administración de biblioteca</p>
+    <h1>Editar usuario</h1>
+    <p class="description">
+      Modifica los datos de la cuenta y guarda los cambios.
+    </p>
+  </header>
+
+  @if (cargando()) {
+    <div class="form-card">
+      <p class="state-message" role="status">
+        Cargando datos del usuario...
+      </p>
+    </div>
+  } @else if (errorCarga()) {
+    <div class="form-card">
+      <div class="error-banner" role="alert">
+        <p>{{ errorCarga() }}</p>
+
+        <div class="error-actions">
+          <button type="button" (click)="cargarDatos()">
+            Reintentar
+          </button>
+
+          <a routerLink="/usuarios" class="secondary-link">
+            Volver al listado
+          </a>
+        </div>
+      </div>
+    </div>
+  } @else if (usuarioActualizado(); as actualizado) {
+    <div class="form-card success-card" role="status">
+      <div class="success-icon">✓</div>
+
+      <h2>Cambios guardados correctamente</h2>
+
+      <p>
+        La información de
+        <strong>{{ actualizado.nombre }}</strong>
+        se actualizó en el sistema.
+      </p>
+
+      <p>
+        <strong>Correo:</strong> {{ actualizado.email }}
+      </p>
+
+      <p>
+        <strong>Rol:</strong> {{ actualizado.rol.nombre }}
+      </p>
+
+      <div class="success-actions">
+        <a
+          [routerLink]="['/usuarios', actualizado.usuario_id]"
+          class="primary-link"
+        >
+          Ver usuario actualizado
+        </a>
+
+        <a routerLink="/usuarios" class="secondary-link">
+          Volver al listado
+        </a>
+      </div>
+    </div>
+  } @else if (usuario(); as usuario) {
+    <div class="form-card">
+      <div class="form-heading">
+        <div>
+          <h2>Editar datos de {{ usuario.nombre }}</h2>
+          <p>
+            Usuario #{{ usuario.usuario_id }}
+          </p>
+        </div>
+      </div>
+
+      <p class="info-note">
+        Desde esta pantalla puedes modificar la información
+        personal y el rol. La contraseña no se modifica aquí.
+      </p>
+
+      @if (errorGuardado()) {
+        <p class="error-banner" role="alert">
+          {{ errorGuardado() }}
+        </p>
+      }
+
+      <app-usuario-form
+        modo="editar"
+        [usuario]="usuario"
+        [roles]="roles()"
+        [guardando]="guardando()"
+        [erroresServidor]="erroresServidor()"
+        (guardar)="guardarCambios($event)"
+        (cancelar)="volverDetalle()"
+      />
+    </div>
+  }
+</section>

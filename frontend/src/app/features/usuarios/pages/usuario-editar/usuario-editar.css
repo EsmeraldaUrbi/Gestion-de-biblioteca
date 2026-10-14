@@ -1,0 +1,173 @@
+:host {
+  display: block;
+}
+
+.editar-page {
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+.page-header {
+  margin-bottom: 26px;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 24px;
+  color: #0765d8;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.back-link:hover {
+  text-decoration: underline;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: #0765d8;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+h1 {
+  margin: 0 0 10px;
+  color: #142238;
+  font-size: clamp(26px, 4vw, 34px);
+}
+
+.description {
+  margin: 0;
+  color: #647084;
+  font-size: 13px;
+}
+
+.form-card {
+  padding: 28px;
+  border: 1px solid #e3e8f1;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 4px 16px rgb(20 35 60 / 4%);
+}
+
+.form-card h2 {
+  margin: 0 0 8px;
+  color: #142238;
+  font-size: 19px;
+}
+
+.form-heading {
+  margin-bottom: 20px;
+}
+
+.form-heading p {
+  margin: 0;
+  color: #647084;
+  font-size: 13px;
+}
+
+.info-note {
+  padding: 13px 16px;
+  margin: 0 0 26px;
+  border-left: 3px solid #0765d8;
+  border-radius: 5px;
+  background: #f1f6ff;
+  color: #375476;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.state-message {
+  padding: 35px;
+  color: #647084;
+  text-align: center;
+}
+
+.error-banner {
+  padding: 14px 16px;
+  margin-bottom: 24px;
+  border: 1px solid #f0c6c6;
+  border-radius: 8px;
+  background: #fff4f4;
+  color: #9c2727;
+  font-size: 13px;
+}
+
+.error-banner p {
+  margin: 0 0 12px;
+}
+
+.error-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.error-actions button,
+.secondary-link {
+  display: inline-block;
+  padding: 10px 16px;
+  border: 1px solid #d9e0eb;
+  border-radius: 8px;
+  background: #fff;
+  color: #334055;
+  font: inherit;
+  font-size: 13px;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.success-card {
+  text-align: center;
+}
+
+.success-card p {
+  color: #586477;
+  line-height: 1.6;
+}
+
+.success-icon {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  margin: 0 auto 20px;
+  border-radius: 50%;
+  background: #e8f7ec;
+  color: #20733d;
+  font-size: 28px;
+  font-weight: 700;
+}
+
+.success-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 24px;
+}
+
+.primary-link {
+  display: inline-block;
+  padding: 12px 20px;
+  border-radius: 8px;
+  background: #0765d8;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.primary-link:hover {
+  background: #0754b3;
+}
+
+@media (max-width: 650px) {
+  .form-card {
+    padding: 20px;
+  }
+}

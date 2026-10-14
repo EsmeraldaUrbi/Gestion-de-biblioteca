@@ -1,0 +1,108 @@
+<section class="detalle-page">
+  <header class="page-header">
+    <a routerLink="/usuarios" class="back-link">
+      ← Volver a usuarios
+    </a>
+
+    <p class="eyebrow">Administración de biblioteca</p>
+    <h1>Detalle del usuario</h1>
+    <p class="description">
+      Consulta la información registrada en el sistema.
+    </p>
+  </header>
+
+  @if (cargando()) {
+    <div class="detail-card">
+      <p class="state-message" role="status">
+        Cargando información del usuario...
+      </p>
+    </div>
+  } @else if (error()) {
+    <div class="detail-card">
+      <div class="error-message" role="alert">
+        <p>{{ error() }}</p>
+
+        <div class="error-actions">
+          <button
+            type="button"
+            class="secondary-button"
+            (click)="cargarUsuario()"
+          >
+            Reintentar
+          </button>
+
+          <a routerLink="/usuarios" class="secondary-link">
+            Volver al listado
+          </a>
+        </div>
+      </div>
+    </div>
+  } @else if (usuario(); as usuario) {
+    <div class="detail-card">
+      <div class="user-heading">
+        <div class="user-avatar" aria-hidden="true">
+          {{ usuario.nombre.charAt(0).toUpperCase() }}
+        </div>
+
+        <div>
+          <h2>{{ usuario.nombre }}</h2>
+          <p>Usuario #{{ usuario.usuario_id }}</p>
+        </div>
+
+        <span class="role-chip">
+          {{ usuario.rol.nombre }}
+        </span>
+      </div>
+
+      <div class="section-heading">
+        <h3>Información personal</h3>
+        <p>Datos asociados a esta cuenta.</p>
+      </div>
+
+      <dl class="detail-grid">
+        <div class="detail-field">
+          <dt>Nombre completo</dt>
+          <dd>{{ usuario.nombre }}</dd>
+        </div>
+
+        <div class="detail-field">
+          <dt>Correo electrónico</dt>
+          <dd>{{ usuario.email }}</dd>
+        </div>
+
+        <div class="detail-field">
+          <dt>Teléfono</dt>
+          <dd>{{ usuario.telefono || 'No registrado' }}</dd>
+        </div>
+
+        <div class="detail-field">
+          <dt>Dirección</dt>
+          <dd>{{ usuario.direccion || 'No registrada' }}</dd>
+        </div>
+
+        <div class="detail-field">
+          <dt>Rol asignado</dt>
+          <dd class="capitalize">{{ usuario.rol.nombre }}</dd>
+        </div>
+
+        <div class="detail-field">
+          <dt>Límite de préstamos activos</dt>
+          <dd>{{ usuario.rol.limite_prestamos_activos }}</dd>
+        </div>
+      </dl>
+
+      <footer class="detail-footer">
+        <a routerLink="/usuarios" class="secondary-link">
+          Volver al listado
+        </a>
+
+        <a
+          [routerLink]="['/usuarios', usuario.usuario_id, 'editar']"
+          class="primary-link"
+        >
+          Editar usuario
+        </a>
+      </footer>
+    </div>
+  }
+</section>
