@@ -149,7 +149,7 @@ class DjangoLibroRepository(ILibroRepository):
                 ]
                 CategoriaLibro.objects.bulk_create(asociaciones_categorias)
 
-        return libro
+        return self.obtener_por_id(libro.libro_id) or libro
 
     def actualizar(
         self,
@@ -184,7 +184,7 @@ class DjangoLibroRepository(ILibroRepository):
                 if asociaciones_categorias:
                     CategoriaLibro.objects.bulk_create(asociaciones_categorias)
 
-        return libro
+        return self.obtener_por_id(libro.libro_id) or libro
 
     def eliminar(self, libro: Libro) -> None:
         libro.delete()

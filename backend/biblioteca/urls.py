@@ -22,6 +22,12 @@ from biblioteca.presentation.usuarios_views import (
     RolesListView,
 )
 
+# Importaciones para ticket 3.3
+from biblioteca.presentation.libros_views import (
+    LibrosListCreateView,
+    LibroDetailView,
+)
+
 urlpatterns = [
     path(
         'estado/',
@@ -80,4 +86,8 @@ urlpatterns = [
     path('catalogo/', CatalogoListView.as_view(), name='catalogo-list'),
     path('catalogo/filtros/', CatalogoFiltrosView.as_view(), name='catalogo-filtros'),
     path('catalogo/<int:libro_id>/', CatalogoDetailView.as_view(), name='catalogo-detail'),
+
+    # 3.3 Libros
+    path('libros/', LibrosListCreateView.as_view(), name='libros-list-create'),
+    path('libros/<int:libro_id>/', LibroDetailView.as_view(), name='libros-detail'),
 ]
