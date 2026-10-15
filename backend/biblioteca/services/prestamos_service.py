@@ -20,55 +20,60 @@ from biblioteca.repositories.prestamos_repository import (
 
 class PrestamoError(Exception):
     """
-    Excepción base para errores del módulo de préstamos.
+    Excepción base del módulo de préstamos.
+
+    El código permite identificar los errores de negocio
+    desde las respuestas de la API.
     """
-    pass
+    codigo = 'ERROR_PRESTAMO'
 
 
 class UsuarioPrestamoNoEncontradoError(PrestamoError):
-    pass
+    codigo = 'USUARIO_NO_ENCONTRADO'
 
 
 class EjemplarPrestamoNoEncontradoError(PrestamoError):
-    pass
+    codigo = 'EJEMPLAR_NO_ENCONTRADO'
 
 
 class IdentificadorPrestamoInvalidoError(PrestamoError):
-    pass
+    codigo = 'IDENTIFICADOR_INVALIDO'
 
 
 class RolNoHabilitadoError(PrestamoError):
-    pass
+    codigo = 'ROL_NO_HABILITADO'
 
 
 class LimitePrestamosAlcanzadoError(PrestamoError):
-    pass
+    codigo = 'LIMITE_PRESTAMOS'
 
 
 class EjemplarNoDisponibleError(PrestamoError):
-    pass
+    codigo = 'EJEMPLAR_NO_DISPONIBLE'
 
 
 class EjemplarOcupadoError(PrestamoError):
-    pass
+    codigo = 'EJEMPLAR_OCUPADO'
 
 
 class AdeudoPendienteError(PrestamoError):
-    pass
+    codigo = 'ADEUDO_PENDIENTE'
 
 
 class BloqueoVigenteError(PrestamoError):
-    pass
+    codigo = 'BLOQUEO_VIGENTE'
 
 
 class PrestamoService:
     """
     Servicio de negocio para el registro de préstamos.
 
-    Gestiona las consultas y el registro de préstamos físicos
-    respetando las reglas establecidas por el proyecto.
+    Centraliza las reglas de elegibilidad y delega las
+    consultas y operaciones de escritura al repositorio.
 
-    La persistencia se delega al repositorio correspondiente.
+    La evaluación previa es informativa y de solo lectura.
+    El registro definitivo utiliza una transacción y
+    bloqueos sobre el usuario y el ejemplar.
     """
 
     DIAS_PRESTAMO = 30
@@ -89,7 +94,7 @@ class PrestamoService:
         )
 
     # -----------------------------------------
-    # Consultas del servicio
+    # Consultas
     # -----------------------------------------
 
     def listar_roles_lectores(self) -> list[Rol]:
@@ -102,9 +107,6 @@ class PrestamoService:
         termino: str,
         limite: int = 10
     ) -> list[Usuario]:
-        """
-        Busca estudiantes y docentes por nombre o correo.
-        """
         if not isinstance(termino, str):
             raise ValueError(
                 'El término de búsqueda debe ser texto.'
@@ -227,7 +229,7 @@ class PrestamoService:
         )
 
     # -----------------------------------------
-    # Validaciones del registro
+    # Validaciones compartidas
     # -----------------------------------------
 
     @staticmethod
@@ -235,10 +237,6 @@ class PrestamoService:
         valor: int,
         nombre: str
     ) -> None:
-        """
-        Rechaza identificadores vacíos, negativos,
-        booleanos y valores que no sean enteros.
-        """
         if (
             not isinstance(valor, int)
             or isinstance(valor, bool)
@@ -247,6 +245,175 @@ class PrestamoService:
             raise IdentificadorPrestamoInvalidoError(
                 f'{nombre} debe ser un entero positivo.'
             )
+
+    def _validar_condiciones(
+        self,
+        usuario: Usuario,
+        ejemplar: Ejemplar,
+        fecha_actual: date,
+        con_bloqueo: bool = False
+    ) -> None:
+        """
+        Comprueba las condiciones del préstamo.
+
+        En la evaluación previa se ejecutan lecturas normales.
+        Durante el registro se utilizan lecturas bloqueantes
+        después de bloquear usuario y ejemplar.
+        """
+
+        # 1. Rol autorizado para recibir préstamos.
+        rol = usuario.rol
+
+        nombre_rol = (
+            rol.nombre
+            .strip()
+            .casefold()
+        )
+
+        if nombre_rol not in self.ROLES_LECTORES:
+            raise RolNoHabilitadoError(
+                'Solo estudiantes y docentes pueden '
+                'recibir préstamos.'
+            )
+
+        # 2. Estado operativo del ejemplar.
+        if ejemplar.estado != EstadoEjemplar.ACTIVO:
+            raise EjemplarNoDisponibleError(
+                'El ejemplar no está ACTIVO y '
+                'no puede prestarse.'
+            )
+
+        # 3. El ejemplar no debe estar prestado.
+        ejemplar_ocupado = (
+            self.repository.tiene_prestamo_activo(
+                ejemplar.ejemplar_id,
+                con_bloqueo=con_bloqueo
+            )
+        )
+
+        if ejemplar_ocupado:
+            raise EjemplarOcupadoError(
+                'El ejemplar ya tiene un préstamo activo.'
+            )
+
+        # 4. Límite de préstamos del usuario.
+        prestamos_activos = (
+            self.repository.contar_prestamos_activos(
+                usuario.usuario_id,
+                con_bloqueo=con_bloqueo
+            )
+        )
+
+        limite_permitido = (
+            rol.limite_prestamos_activos
+        )
+
+        if (
+            limite_permitido <= 0
+            or prestamos_activos >= limite_permitido
+        ):
+            raise LimitePrestamosAlcanzadoError(
+                'El usuario alcanzó su límite de '
+                'préstamos activos.'
+            )
+
+        # 5. Adeudos económicos pendientes.
+        if self.repository.tiene_adeudos_pendientes(
+            usuario.usuario_id
+        ):
+            raise AdeudoPendienteError(
+                'El usuario tiene multas pendientes de pago.'
+            )
+
+        # 6. Bloqueos temporales vigentes.
+        if self.repository.tiene_bloqueo_vigente(
+            usuario.usuario_id,
+            fecha_actual
+        ):
+            raise BloqueoVigenteError(
+                'El usuario tiene un bloqueo temporal vigente.'
+            )
+
+    # -----------------------------------------
+    # Evaluación previa del préstamo
+    # -----------------------------------------
+
+    def evaluar_elegibilidad(
+        self,
+        usuario_id: int,
+        ejemplar_id: int
+    ) -> dict:
+        """
+        Evalúa si un préstamo podría registrarse.
+
+        No modifica la base de datos ni bloquea registros.
+        Retorna la primera condición incumplida, si existe.
+
+        El resultado puede cambiar antes del registro,
+        por lo que el POST debe repetir todas las reglas.
+        """
+
+        self._validar_id(
+            usuario_id,
+            'usuario_id'
+        )
+
+        self._validar_id(
+            ejemplar_id,
+            'ejemplar_id'
+        )
+
+        usuario = self.obtener_usuario(
+            usuario_id
+        )
+
+        ejemplar = self.obtener_ejemplar(
+            ejemplar_id
+        )
+
+        fecha_actual = timezone.localdate()
+
+        fecha_limite = (
+            fecha_actual
+            + timedelta(days=self.DIAS_PRESTAMO)
+        )
+
+        resultado = {
+            'elegible': True,
+            'motivos': [],
+            'usuario': usuario,
+            'ejemplar': ejemplar,
+            'prestamos_activos': (
+                self.repository.contar_prestamos_activos(
+                    usuario_id
+                )
+            ),
+            'limite_prestamos_activos': (
+                usuario.rol.limite_prestamos_activos
+            ),
+            'fecha_prestamo': fecha_actual,
+            'fecha_limite': fecha_limite,
+        }
+
+        try:
+            self._validar_condiciones(
+                usuario=usuario,
+                ejemplar=ejemplar,
+                fecha_actual=fecha_actual,
+                con_bloqueo=False
+            )
+
+        except PrestamoError as error:
+            resultado['elegible'] = False
+
+            resultado['motivos'] = [
+                {
+                    'codigo': error.codigo,
+                    'mensaje': str(error),
+                }
+            ]
+
+        return resultado
 
     # -----------------------------------------
     # Registro definitivo del préstamo
@@ -258,16 +425,15 @@ class PrestamoService:
         ejemplar_id: int
     ) -> Prestamo:
         """
-        Registra un préstamo físico cuando cumple las
-        condiciones del usuario y del ejemplar.
+        Registra un préstamo aplicando las reglas
+        de negocio y el control transaccional.
 
         Orden de bloqueo:
         1. Usuario.
         2. Ejemplar.
 
-        La transacción impide que solicitudes simultáneas
-        presten dos veces la misma copia o superen el límite
-        del mismo usuario.
+        Revalida las condiciones dentro de la
+        transacción antes de guardar el préstamo.
         """
 
         self._validar_id(
@@ -282,10 +448,7 @@ class PrestamoService:
 
         with transaction.atomic():
 
-            # -------------------------------------
-            # 1. Obtener y bloquear al usuario
-            # -------------------------------------
-
+            # 1. Bloquear la fila del usuario.
             usuario = self.repository.obtener_usuario(
                 usuario_id,
                 con_bloqueo=True
@@ -296,28 +459,7 @@ class PrestamoService:
                     f'No existe un usuario con ID {usuario_id}.'
                 )
 
-            # -------------------------------------
-            # 2. Validar el rol del lector
-            # -------------------------------------
-
-            rol = usuario.rol
-
-            nombre_rol = (
-                rol.nombre
-                .strip()
-                .casefold()
-            )
-
-            if nombre_rol not in self.ROLES_LECTORES:
-                raise RolNoHabilitadoError(
-                    'Solo estudiantes y docentes pueden '
-                    'recibir préstamos.'
-                )
-
-            # -------------------------------------
-            # 3. Obtener y bloquear el ejemplar
-            # -------------------------------------
-
+            # 2. Bloquear la fila del ejemplar.
             ejemplar = self.repository.obtener_ejemplar(
                 ejemplar_id,
                 con_bloqueo=True
@@ -328,104 +470,23 @@ class PrestamoService:
                     f'No existe un ejemplar con ID {ejemplar_id}.'
                 )
 
-            # -------------------------------------
-            # 4. Comprobar estado operativo
-            # -------------------------------------
-
-            if ejemplar.estado != EstadoEjemplar.ACTIVO:
-                raise EjemplarNoDisponibleError(
-                    'El ejemplar no está ACTIVO y '
-                    'no puede prestarse.'
-                )
-
-            # -------------------------------------
-            # 5. Comprobar ocupación del ejemplar
-            # -------------------------------------
-
-            ejemplar_ocupado = (
-                self.repository.tiene_prestamo_activo(
-                    ejemplar_id,
-                    con_bloqueo=True
-                )
-            )
-
-            if ejemplar_ocupado:
-                raise EjemplarOcupadoError(
-                    'El ejemplar ya tiene un préstamo activo.'
-                )
-
-            # -------------------------------------
-            # 6. Comprobar límite de préstamos
-            # -------------------------------------
-
-            prestamos_activos = (
-                self.repository.contar_prestamos_activos(
-                    usuario_id,
-                    con_bloqueo=True
-                )
-            )
-
-            limite_permitido = (
-                rol.limite_prestamos_activos
-            )
-
-            if (
-                limite_permitido <= 0
-                or prestamos_activos >= limite_permitido
-            ):
-                raise LimitePrestamosAlcanzadoError(
-                    'El usuario alcanzó su límite de '
-                    'préstamos activos.'
-                )
-
-            # -------------------------------------
-            # 7. Comprobar adeudos económicos
-            # -------------------------------------
-
-            tiene_adeudos = (
-                self.repository.tiene_adeudos_pendientes(
-                    usuario_id
-                )
-            )
-
-            if tiene_adeudos:
-                raise AdeudoPendienteError(
-                    'El usuario tiene multas '
-                    'pendientes de pago.'
-                )
-
-            # -------------------------------------
-            # 8. Comprobar bloqueos vigentes
-            # -------------------------------------
-
             fecha_actual = timezone.localdate()
 
-            tiene_bloqueo = (
-                self.repository.tiene_bloqueo_vigente(
-                    usuario_id,
-                    fecha_actual
-                )
+            # 3. Validar nuevamente todas las condiciones.
+            self._validar_condiciones(
+                usuario=usuario,
+                ejemplar=ejemplar,
+                fecha_actual=fecha_actual,
+                con_bloqueo=True
             )
 
-            if tiene_bloqueo:
-                raise BloqueoVigenteError(
-                    'El usuario tiene un bloqueo '
-                    'temporal vigente.'
-                )
-
-            # -------------------------------------
-            # 9. Calcular la fecha límite
-            # -------------------------------------
-
+            # 4. Calcular fecha límite.
             fecha_limite = (
                 fecha_actual
                 + timedelta(days=self.DIAS_PRESTAMO)
             )
 
-            # -------------------------------------
-            # 10. Registrar el préstamo
-            # -------------------------------------
-
+            # 5. Registrar el préstamo.
             prestamo = self.repository.crear_prestamo(
                 usuario_id=usuario_id,
                 ejemplar_id=ejemplar_id,

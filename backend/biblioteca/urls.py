@@ -1,9 +1,6 @@
-from biblioteca.presentation.catalogo_views import (
-    CatalogoListView, CatalogoDetailView, CatalogoFiltrosView,
-)
-
 from django.urls import path
 
+# 3.1 Autenticación y permisos.
 from biblioteca.presentation.auth_views import (
     AccesoBibliotecarioView,
     AccesoLectorView,
@@ -11,33 +8,60 @@ from biblioteca.presentation.auth_views import (
     LogoutView,
     UsuarioActualView,
 )
+
+# Operación de prueba del proyecto.
 from biblioteca.presentation.test_views import (
     TestStatusView,
 )
 
-#Importaiones para ticket 3.2
+# 3.2 Gestión de usuarios.
 from biblioteca.presentation.usuarios_views import (
     UsuariosListCreateView,
     UsuarioDetailView,
     RolesListView,
 )
 
-# Importaciones para ticket 3.3
+# 3.3 Gestión de libros.
 from biblioteca.presentation.libros_views import (
     LibrosListCreateView,
     LibroDetailView,
 )
+
+# 3.3 Gestión de ejemplares.
 from biblioteca.presentation.ejemplares_views import (
     EjemplaresListCreateView,
     EjemplarDetailView,
 )
 
+# 3.4 Catálogo.
+from biblioteca.presentation.catalogo_views import (
+    CatalogoListView,
+    CatalogoDetailView,
+    CatalogoFiltrosView,
+)
+
+# 3.5 Registro de préstamos.
+from biblioteca.presentation.prestamos_views import (
+    BusquedaLectoresView,
+    PrestamoElegibilidadView,
+    PrestamosRegistroView,
+)
+
+
 urlpatterns = [
+    # -----------------------------------------
+    # Operación de estado
+    # -----------------------------------------
+
     path(
         'estado/',
         TestStatusView.as_view(),
         name='test-estado'
     ),
+
+    # -----------------------------------------
+    # 3.1 Autenticación
+    # -----------------------------------------
 
     path(
         'auth/login/',
@@ -69,7 +93,10 @@ urlpatterns = [
         name='auth-access-lector'
     ),
 
-    #3.2
+    # -----------------------------------------
+    # 3.2 Usuarios y roles
+    # -----------------------------------------
+
     path(
         'usuarios/',
         UsuariosListCreateView.as_view(),
@@ -87,13 +114,76 @@ urlpatterns = [
         RolesListView.as_view(),
         name='roles-list'
     ),
-    path('catalogo/', CatalogoListView.as_view(), name='catalogo-list'),
-    path('catalogo/filtros/', CatalogoFiltrosView.as_view(), name='catalogo-filtros'),
-    path('catalogo/<int:libro_id>/', CatalogoDetailView.as_view(), name='catalogo-detail'),
 
-    # 3.3 Libros y Ejemplares
-    path('libros/', LibrosListCreateView.as_view(), name='libros-list-create'),
-    path('libros/<int:libro_id>/', LibroDetailView.as_view(), name='libros-detail'),
-    path('ejemplares/', EjemplaresListCreateView.as_view(), name='ejemplares-list-create'),
-    path('ejemplares/<int:ejemplar_id>/', EjemplarDetailView.as_view(), name='ejemplares-detail'),
+    # -----------------------------------------
+    # 3.4 Catálogo
+    # -----------------------------------------
+
+    path(
+        'catalogo/',
+        CatalogoListView.as_view(),
+        name='catalogo-list'
+    ),
+
+    path(
+        'catalogo/filtros/',
+        CatalogoFiltrosView.as_view(),
+        name='catalogo-filtros'
+    ),
+
+    path(
+        'catalogo/<int:libro_id>/',
+        CatalogoDetailView.as_view(),
+        name='catalogo-detail'
+    ),
+
+    # -----------------------------------------
+    # 3.3 Libros y ejemplares
+    # -----------------------------------------
+
+    path(
+        'libros/',
+        LibrosListCreateView.as_view(),
+        name='libros-list-create'
+    ),
+
+    path(
+        'libros/<int:libro_id>/',
+        LibroDetailView.as_view(),
+        name='libros-detail'
+    ),
+
+    path(
+        'ejemplares/',
+        EjemplaresListCreateView.as_view(),
+        name='ejemplares-list-create'
+    ),
+
+    path(
+        'ejemplares/<int:ejemplar_id>/',
+        EjemplarDetailView.as_view(),
+        name='ejemplares-detail'
+    ),
+
+    # -----------------------------------------
+    # 3.5 Registro de préstamos
+    # -----------------------------------------
+
+    path(
+        'prestamos/seleccion/usuarios/',
+        BusquedaLectoresView.as_view(),
+        name='prestamos-buscar-lectores'
+    ),
+
+    path(
+        'prestamos/elegibilidad/',
+        PrestamoElegibilidadView.as_view(),
+        name='prestamos-elegibilidad'
+    ),
+
+    path(
+        'prestamos/',
+        PrestamosRegistroView.as_view(),
+        name='prestamos-registro'
+    ),
 ]
