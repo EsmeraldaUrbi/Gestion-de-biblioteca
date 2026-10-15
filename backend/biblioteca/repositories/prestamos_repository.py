@@ -1,4 +1,3 @@
-
 from abc import ABC, abstractmethod
 from datetime import date
 from decimal import Decimal
@@ -58,14 +57,16 @@ class IPrestamoRepository(ABC):
     @abstractmethod
     def contar_prestamos_activos(
         self,
-        usuario_id: int
+        usuario_id: int,
+        con_bloqueo: bool = False
     ) -> int:
         pass
 
     @abstractmethod
     def tiene_prestamo_activo(
         self,
-        ejemplar_id: int
+        ejemplar_id: int,
+        con_bloqueo: bool = False
     ) -> bool:
         pass
 
@@ -106,8 +107,8 @@ class DjangoPrestamoRepository(IPrestamoRepository):
     """
     Implementación de persistencia mediante Django ORM.
 
-    Utiliza los modelos existentes del sistema y concentra
-    las operaciones de consulta y escritura de préstamos.
+    Utiliza los modelos existentes del proyecto y concentra
+    las consultas y operaciones de almacenamiento de préstamos.
     """
 
     def listar_roles_lectores(self) -> QuerySet[Rol]:
@@ -128,8 +129,7 @@ class DjangoPrestamoRepository(IPrestamoRepository):
         """
         Busca estudiantes y docentes por nombre o correo.
 
-        Devuelve una lista limitada y ordenada.
-        No incorpora al personal bibliotecario.
+        No incluye usuarios con rol bibliotecario.
         """
         termino = termino.strip()
 
@@ -158,10 +158,11 @@ class DjangoPrestamoRepository(IPrestamoRepository):
         con_bloqueo: bool = False
     ) -> Optional[Usuario]:
         """
-        Recupera un usuario por su identificador.
+        Obtiene el usuario correspondiente al identificador.
 
-        El bloqueo opcional se utilizará posteriormente
-        dentro de la transacción del registro de préstamos.
+        Cuando se solicita bloqueo, utiliza SELECT FOR UPDATE.
+        No realiza JOIN con Rol para evitar bloquear otras filas
+        innecesariamente.
         """
         usuarios = Usuario.objects.all()
 
@@ -182,11 +183,10 @@ class DjangoPrestamoRepository(IPrestamoRepository):
         con_bloqueo: bool = False
     ) -> Optional[Ejemplar]:
         """
-        Recupera una copia física por su identificador.
+        Obtiene una copia física por identificador.
 
-        Para bloquear, se consulta únicamente la fila
-        del ejemplar, evitando bloquear tablas relacionadas
-        innecesariamente mediante JOIN.
+        El bloqueo es compatible con el utilizado por
+        EjemplarService.cambiar_estado() del módulo 3.3.
         """
         ejemplares = Ejemplar.objects.all()
 
@@ -206,7 +206,7 @@ class DjangoPrestamoRepository(IPrestamoRepository):
         usuario_id: int
     ) -> QuerySet[Prestamo]:
         """
-        Un préstamo permanece activo mientras no exista
+        Un préstamo se considera activo cuando no existe
         una fecha de devolución registrada.
         """
         return (
@@ -219,42 +219,71 @@ class DjangoPrestamoRepository(IPrestamoRepository):
                 usuario_id=usuario_id,
                 fecha_devolucion__isnull=True
             )
-            .order_by('fecha_prestamo', 'prestamo_id')
+            .order_by(
+                'fecha_prestamo',
+                'prestamo_id'
+            )
         )
 
     def contar_prestamos_activos(
         self,
-        usuario_id: int
+        usuario_id: int,
+        con_bloqueo: bool = False
     ) -> int:
-        return (
-            Prestamo.objects
-            .filter(
-                usuario_id=usuario_id,
-                fecha_devolucion__isnull=True
-            )
-            .count()
+        """
+        Cuenta los préstamos que todavía no han sido devueltos.
+
+        En una operación de registro utiliza una lectura
+        bloqueante para consultar los datos confirmados más
+        recientes, incluso bajo REPEATABLE READ de MySQL.
+        """
+        prestamos = Prestamo.objects.filter(
+            usuario_id=usuario_id,
+            fecha_devolucion__isnull=True
         )
+
+        if con_bloqueo:
+            identificadores = (
+                prestamos
+                .select_for_update()
+                .values_list(
+                    'prestamo_id',
+                    flat=True
+                )
+            )
+
+            return len(list(identificadores))
+
+        return prestamos.count()
 
     def tiene_prestamo_activo(
         self,
-        ejemplar_id: int
+        ejemplar_id: int,
+        con_bloqueo: bool = False
     ) -> bool:
-        return (
-            Prestamo.objects
-            .filter(
-                ejemplar_id=ejemplar_id,
-                fecha_devolucion__isnull=True
-            )
-            .exists()
+        """
+        Determina si existe un préstamo activo sobre un ejemplar.
+
+        La consulta bloqueante permite validar la ocupación
+        después de obtener el bloqueo de la copia física.
+        """
+        prestamos = Prestamo.objects.filter(
+            ejemplar_id=ejemplar_id,
+            fecha_devolucion__isnull=True
         )
+
+        if con_bloqueo:
+            prestamos = prestamos.select_for_update()
+
+        return prestamos.exists()
 
     def listar_sanciones(
         self,
         usuario_id: int
     ) -> QuerySet[Sancion]:
         """
-        Consulta las sanciones relacionadas con préstamos
-        de un usuario, incluyendo registros históricos.
+        Consulta todas las sanciones relacionadas con
+        los préstamos del usuario.
         """
         return (
             Sancion.objects
@@ -271,7 +300,7 @@ class DjangoPrestamoRepository(IPrestamoRepository):
     ) -> bool:
         """
         Identifica sanciones con un importe positivo
-        que todavía no tienen fecha de pago.
+        que no tienen registrada una fecha de pago.
         """
         return (
             Sancion.objects
@@ -289,10 +318,8 @@ class DjangoPrestamoRepository(IPrestamoRepository):
         fecha: date
     ) -> bool:
         """
-        Consulta bloqueos registrados cuyo intervalo
-        incluye la fecha proporcionada.
-
-        Ambos extremos del intervalo son inclusivos.
+        Determina si una sanción tiene un período de bloqueo
+        que incluye la fecha consultada.
         """
         return (
             Sancion.objects
@@ -312,12 +339,11 @@ class DjangoPrestamoRepository(IPrestamoRepository):
         fecha_limite: date
     ) -> Prestamo:
         """
-        Operación de persistencia de bajo nivel.
+        Persiste el préstamo mediante Django ORM.
 
-        No valida la elegibilidad ni la disponibilidad.
-        El servicio del commit 2 deberá invocarla
-        exclusivamente dentro de una transacción que
-        haya validado todas las reglas de negocio.
+        Esta operación no valida por sí misma las reglas.
+        Debe invocarse desde PrestamoService.registrar_prestamo(),
+        dentro de la transacción correspondiente.
         """
         return Prestamo.objects.create(
             usuario_id=usuario_id,
