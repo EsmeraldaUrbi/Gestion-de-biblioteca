@@ -1,0 +1,151 @@
+<div class="detail-container">
+  <!-- Navegación de retorno / Breadcrumb -->
+  <nav class="breadcrumb-nav" aria-label="Navegación secundaria">
+    <a routerLink="/catalogo" class="back-link">
+      <span class="arrow">←</span> Volver al Catálogo
+    </a>
+    @if (libro(); as l) {
+      <span class="breadcrumb-separator">/</span>
+      <span class="breadcrumb-current">{{ l.titulo }}</span>
+    }
+  </nav>
+
+  <!-- Estado de carga -->
+  @if (cargando()) {
+    <div class="state-container loading-state">
+      <div class="spinner"></div>
+      <p>Cargando información bibliográfica y existencias...</p>
+    </div>
+  }
+
+  <!-- Estado de error -->
+  @if (!cargando() && error()) {
+    <div class="state-container error-state">
+      <div class="error-icon">⚠️</div>
+      <h2>No fue posible mostrar el libro</h2>
+      <p class="error-text">{{ error() }}</p>
+      <button type="button" class="btn-back" (click)="volver()">
+        Regresar al Catálogo
+      </button>
+    </div>
+  }
+
+  <!-- Detalle del libro -->
+  @if (!cargando() && !error() && libro(); as l) {
+    <div class="detail-layout">
+      <!-- Tarjeta principal de información -->
+      <article class="detail-main-card">
+        <header class="detail-header">
+          <div class="detail-badges">
+            @for (cat of l.categorias; track cat.categoria_id) {
+              <span class="category-badge">{{ cat.nombre_categoria }}</span>
+            }
+
+            @if (l.stock_disponible > 0) {
+              <span class="status-pill status-pill--available">
+                <span class="status-bullet">●</span> Disponible para préstamo en sala o domicilio
+              </span>
+            } @else {
+              <span class="status-pill status-pill--unavailable">
+                <span class="status-bullet">●</span> No disponible actualmente
+              </span>
+            }
+          </div>
+
+          <h1 class="detail-title">{{ l.titulo }}</h1>
+
+          <div class="authors-row">
+            <span class="author-icon">✍️</span>
+            <span class="authors-names">{{ formatearAutores(l) }}</span>
+          </div>
+        </header>
+
+        <section class="metadata-grid" aria-label="Ficha técnica bibliográfica">
+          <div class="meta-card">
+            <span class="meta-label">ISBN</span>
+            <strong class="meta-value">{{ l.isbn }}</strong>
+          </div>
+
+          <div class="meta-card">
+            <span class="meta-label">Fecha de Publicación</span>
+            <strong class="meta-value">
+              {{ l.fecha_publicacion ? (l.fecha_publicacion | date: 'longDate') : 'No registrada' }}
+            </strong>
+          </div>
+
+          <div class="meta-card">
+            <span class="meta-label">Identificador de Registro</span>
+            <strong class="meta-value">#{{ l.libro_id }}</strong>
+          </div>
+
+          <div class="meta-card">
+            <span class="meta-label">Categorías Asignadas</span>
+            <strong class="meta-value">
+              {{ l.categorias.length ? l.categorias.length : 'Sin clasificar' }}
+            </strong>
+          </div>
+        </section>
+
+        <!-- Existencias y disponibilidad física -->
+        <section class="stock-overview-section" aria-label="Resumen de existencias">
+          <h2 class="section-subtitle">Disponibilidad en Biblioteca</h2>
+
+          <div class="stock-cards-grid">
+            <div class="stock-card stock-card--total">
+              <div class="stock-card-header">
+                <span class="stock-card-title">Stock Total Registrado</span>
+              </div>
+              <div class="stock-card-body">
+                <span class="stock-card-number">{{ l.stock_total }}</span>
+                <span class="stock-card-unit">ejemplares</span>
+              </div>
+              <p class="stock-card-desc">
+                Total de copias físicas patrimoniales activas o en mantenimiento (excluye bajas).
+              </p>
+            </div>
+
+            <div class="stock-card stock-card--available" [class.stock-card--zero]="l.stock_disponible === 0">
+              <div class="stock-card-header">
+                <span class="stock-card-title">Copias Disponibles</span>
+              </div>
+              <div class="stock-card-body">
+                <span class="stock-card-number">{{ l.stock_disponible }}</span>
+                <span class="stock-card-unit">disponibles</span>
+              </div>
+              <p class="stock-card-desc">
+                Ejemplares activos listos para préstamo inmediato en ventanilla.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Lista de autores y categorías detalladas -->
+        <footer class="detail-footer">
+          <div class="tags-group">
+            <span class="tags-group-label">Autores asociados:</span>
+            <div class="tags-list">
+              @for (autor of l.autores; track autor.autor_id) {
+                <span class="tag-pill">{{ autor.nombre }}</span>
+              }
+              @if (!l.autores.length) {
+                <span class="tag-pill tag-pill--muted">Sin autores registrados</span>
+              }
+            </div>
+          </div>
+
+          <div class="tags-group">
+            <span class="tags-group-label">Temáticas y categorías:</span>
+            <div class="tags-list">
+              @for (cat of l.categorias; track cat.categoria_id) {
+                <span class="tag-pill tag-pill--cat">{{ cat.nombre_categoria }}</span>
+              }
+              @if (!l.categorias.length) {
+                <span class="tag-pill tag-pill--muted">Sin categorías asignadas</span>
+              }
+            </div>
+          </div>
+        </footer>
+      </article>
+    </div>
+  }
+</div>

@@ -1,0 +1,247 @@
+<div class="catalogo-container">
+  <!-- Encabezado Institucional -->
+  <header class="catalogo-header">
+    <div class="header-titles">
+      <div class="eyebrow-container">
+        <span class="eyebrow-bar" aria-hidden="true"></span>
+        <span class="eyebrow-text">FONDO BIBLIOTECARIO CENTRAL</span>
+      </div>
+      <h1 class="catalogo-title">Catálogo de Libros</h1>
+    </div>
+
+    <!-- Métrica Segmentada Horizontal Única -->
+    <div class="metrics-card" role="region" aria-label="Estadísticas de catálogo">
+      <div class="metric-segment">
+        <span class="metric-label">Libros registrados</span>
+        <strong class="metric-value">{{ totalRegistros() }}</strong>
+      </div>
+      <div class="metric-divider" aria-hidden="true"></div>
+      <div class="metric-segment">
+        <span class="metric-label">Disponibles en esta página</span>
+        <strong class="metric-value metric-value--success">{{ totalDisponibles() }}</strong>
+      </div>
+      <div class="metric-divider" aria-hidden="true"></div>
+      <div class="metric-icon-segment" aria-hidden="true">
+        <svg class="metric-book-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+        </svg>
+      </div>
+    </div>
+  </header>
+
+  <!-- Panel de búsqueda y filtros compacto -->
+  <section class="filters-card" aria-label="Búsqueda y filtros del catálogo">
+    <form class="search-form" (ngSubmit)="onBuscar()">
+      <!-- Fila superior: Input de búsqueda -->
+      <div class="search-input-wrapper">
+        <svg class="search-icon" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+          <path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd" />
+        </svg>
+        <input
+          type="search"
+          class="search-input"
+          placeholder="Buscar por título…"
+          [ngModel]="busqueda()"
+          (ngModelChange)="onBusquedaChange($event)"
+          name="busqueda"
+          aria-label="Buscar libros por título"
+        />
+        <div class="search-suffix-hint" aria-hidden="true">
+          <span class="kbd-badge">Enter</span>
+        </div>
+      </div>
+
+      <!-- Fila inferior: Controles y desplegables -->
+      <div class="filters-row">
+        <!-- Selector de ordenación visual (A - Z por defecto según el backend) -->
+        <div class="filter-group filter-group--sort">
+          <label for="filtro-orden" class="sr-only">Orden de visualización</label>
+          <div class="select-wrapper">
+            <select
+              id="filtro-orden"
+              class="filter-select select-sort"
+              aria-label="Ordenamiento de libros"
+              disabled
+              title="Orden predeterminado por título ascendente (A - Z)"
+            >
+              <option selected>Título (A - Z)</option>
+            </select>
+            <span class="select-chevron" aria-hidden="true">▾</span>
+          </div>
+        </div>
+
+        <!-- Selector de Autor -->
+        <div class="filter-group">
+          <label for="filtro-autor" class="sr-only">Filtrar por autor</label>
+          <div class="select-wrapper">
+            <select
+              id="filtro-autor"
+              class="filter-select"
+              [ngModel]="autorSeleccionado()"
+              (ngModelChange)="autorSeleccionado.set($event); onFiltroChange()"
+              name="autor"
+            >
+              <option [ngValue]="null">Todos los autores</option>
+              @for (autor of autores(); track autor.autor_id) {
+                <option [ngValue]="autor.autor_id">{{ autor.nombre }}</option>
+              }
+            </select>
+            <span class="select-chevron" aria-hidden="true">▾</span>
+          </div>
+        </div>
+
+        <!-- Selector de Categoría -->
+        <div class="filter-group">
+          <label for="filtro-categoria" class="sr-only">Filtrar por categoría</label>
+          <div class="select-wrapper">
+            <select
+              id="filtro-categoria"
+              class="filter-select"
+              [ngModel]="categoriaSeleccionada()"
+              (ngModelChange)="categoriaSeleccionada.set($event); onFiltroChange()"
+              name="categoria"
+            >
+              <option [ngValue]="null">Todas las categorías</option>
+              @for (cat of categorias(); track cat.categoria_id) {
+                <option [ngValue]="cat.categoria_id">{{ cat.nombre_categoria }}</option>
+              }
+            </select>
+            <span class="select-chevron" aria-hidden="true">▾</span>
+          </div>
+        </div>
+
+        <!-- Toggle de disponibilidad inmediata -->
+        <label class="toggle-filter" [class.toggle-filter--active]="soloDisponibles()">
+          <input
+            type="checkbox"
+            class="toggle-checkbox"
+            [checked]="soloDisponibles()"
+            (change)="soloDisponibles.set(!soloDisponibles()); onFiltroChange()"
+          />
+          <span class="toggle-content">
+            <span class="bolt-icon" aria-hidden="true">⚡</span>
+            <span class="toggle-text">Solo disponibilidad inmediata</span>
+          </span>
+        </label>
+
+        <!-- Botón Limpiar filtros (solo si hay filtros activos) -->
+        @if (hayFiltrosActivos()) {
+          <button
+            type="button"
+            class="btn-clear"
+            (click)="limpiarFiltros()"
+            aria-label="Restablecer todos los filtros y búsqueda"
+          >
+            Limpiar filtros
+          </button>
+        }
+      </div>
+    </form>
+  </section>
+
+  <!-- Estado de carga -->
+  @if (cargando()) {
+    <div class="state-container loading-state" role="status">
+      <div class="spinner"></div>
+      <p>Consultando el catálogo bibliográfico universitario...</p>
+    </div>
+  }
+
+  <!-- Mensaje de error con reintento -->
+  @if (!cargando() && error()) {
+    <div class="state-container error-state" role="alert">
+      <p class="error-message">{{ error() }}</p>
+      <button type="button" class="btn-retry" (click)="cargarCatalogo()">Reintentar consulta</button>
+    </div>
+  }
+
+  <!-- Cuadrícula de libros (3 columnas en escritorio) -->
+  @if (!cargando() && !error() && libros().length > 0) {
+    <div class="books-grid">
+      @for (libro of libros(); track libro.libro_id) {
+        @let estado = obtenerEstadoDisponibilidad(libro);
+
+        <article class="book-card">
+          <!-- Fila superior: Categoría e Indicador de Disponibilidad -->
+          <div class="card-top-row">
+            <span class="category-name">
+              {{ libro.categorias.length ? libro.categorias[0].nombre_categoria : 'GENERAL' }}
+            </span>
+
+            <span class="status-pill" [ngClass]="estado.clase">
+              <span class="status-bullet">●</span> {{ estado.etiqueta }}
+            </span>
+          </div>
+
+          <!-- Título del libro -->
+          <h2 class="book-title" [title]="libro.titulo">
+            <a [routerLink]="['/catalogo', libro.libro_id]" class="book-title-link">
+              {{ libro.titulo }}
+            </a>
+          </h2>
+
+          <!-- Autores -->
+          <p class="book-authors">
+            {{ formatearAutores(libro) }}
+          </p>
+
+          <!-- Acción inferior: Ver detalles -->
+          <div class="card-actions">
+            <button
+              type="button"
+              class="btn-action btn-action--details"
+              (click)="verDetalle(libro.libro_id)"
+            >
+              Ver detalles
+            </button>
+          </div>
+        </article>
+      }
+    </div>
+
+    <!-- Paginación estilo prototipo -->
+    <footer class="pagination-footer">
+      <div class="pagination-info">
+        <span class="book-icon" aria-hidden="true">📖</span> Mostrando <strong>{{ rangoMostrado() }}</strong> libros catalogados
+      </div>
+
+      <nav class="pagination-controls" aria-label="Páginas del catálogo">
+        <button
+          type="button"
+          class="btn-page btn-page--nav"
+          [disabled]="paginaActual() <= 1"
+          (click)="paginaAnterior()"
+        >
+          ‹ Anterior
+        </button>
+
+        <span class="page-number-pill" aria-current="page">
+          {{ paginaActual() }}
+        </span>
+
+        <button
+          type="button"
+          class="btn-page btn-page--nav btn-page--next"
+          [disabled]="paginaActual() >= totalPaginas()"
+          (click)="paginaSiguiente()"
+        >
+          Siguiente ›
+        </button>
+      </nav>
+    </footer>
+  }
+
+  <!-- Mensaje de búsqueda sin resultados -->
+  @if (!cargando() && !error() && libros().length === 0) {
+    <div class="state-container empty-state">
+      <div class="empty-icon">🔍</div>
+      <h2>No se encontraron libros</h2>
+      <p class="empty-text">
+        No hay libros que coincidan con los criterios de búsqueda o filtros seleccionados.
+      </p>
+      <button type="button" class="btn-clear-large" (click)="limpiarFiltros()">
+        Restablecer todos los filtros
+      </button>
+    </div>
+  }
+</div>
