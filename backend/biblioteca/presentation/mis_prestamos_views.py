@@ -1,14 +1,9 @@
-from rest_framework import status
+from rest_framework.permissions import IsAuthenticated
 
 from rest_framework.pagination import (
     PageNumberPagination,
 )
 
-from rest_framework.permissions import (
-    IsAuthenticated,
-)
-
-from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from biblioteca.permissions import (
@@ -25,9 +20,7 @@ from biblioteca.services.mis_prestamos_service import (
 )
 
 
-class MisPrestamosPagination(
-    PageNumberPagination
-):
+class MisPrestamosPagination(PageNumberPagination):
     page_size = 8
     page_size_query_param = 'page_size'
     max_page_size = 20
@@ -37,9 +30,8 @@ class MisPrestamosView(APIView):
     """
     GET /api/prestamos/mios/
 
-    Consulta los préstamos del usuario autenticado.
-
-    No permite elegir otro usuario mediante parámetros.
+    Devuelve exclusivamente los préstamos del
+    estudiante o docente autenticado.
     """
 
     permission_classes = [
@@ -61,14 +53,25 @@ class MisPrestamosView(APIView):
             'todos'
         )
 
-        # La identidad siempre procede del token.
+        # Nunca se recibe el usuario_id del cliente.
         usuario_id = request.user.usuario_id
+
+        limite_prestamos = (
+            request.user.rol.limite_prestamos_activos
+        )
 
         service = MisPrestamosService()
 
         prestamos, resumen, hoy = service.consultar(
             usuario_id=usuario_id,
             filtro=filtro
+        )
+
+        estado_cuenta = service.obtener_estado_cuenta(
+            usuario_id=usuario_id,
+            limite_prestamos=limite_prestamos,
+            resumen=resumen,
+            hoy=hoy
         )
 
         paginador = MisPrestamosPagination()
@@ -92,5 +95,6 @@ class MisPrestamosView(APIView):
         )
 
         respuesta.data['resumen'] = resumen
+        respuesta.data['estado_cuenta'] = estado_cuenta
 
         return respuesta

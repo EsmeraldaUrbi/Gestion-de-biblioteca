@@ -4,7 +4,11 @@
 
 Consulta personal de préstamos para estudiantes y docentes.
 
-No contempla registro, modificación, devolución ni sanciones.
+Permite consultar historial, fechas, estados y restricciones
+de cuenta registradas.
+
+No contempla renovaciones, devoluciones, generación de multas,
+registro de pagos ni creación de bloqueos.
 
 ## Endpoint
 
@@ -28,64 +32,45 @@ No se acepta `usuario_id` como parámetro.
 | page | Entero positivo | 1 |
 | page_size | Entero de 1 a 20 | 8 |
 
-El filtro `activos` incluye los préstamos todavía
-sin devolver, incluso cuando están vencidos.
-
 ## Respuesta HTTP 200
 
-La respuesta contiene:
-
-- count: préstamos que coinciden con el filtro.
-- next: URL de la página siguiente o null.
-- previous: URL de la página anterior o null.
-- results: registros de la página.
-- resumen: estadísticas de todos los préstamos del usuario.
-
-Cada préstamo incluye:
-
-- prestamo_id
-- libro: identificador, título e ISBN.
-- ejemplar: identificador y código de inventario.
-- fecha_prestamo
-- fecha_limite
-- fecha_devolucion
-- estado
-- dias_restantes
-
-## Estados
-
-- EN_PRESTAMO: sin devolución y plazo no vencido.
-- VENCIDO: sin devolución y fecha límite anterior a hoy.
-- DEVUELTO: fecha de devolución registrada.
-
-Los estados se calculan a partir de los modelos existentes.
-
-`dias_restantes` es null cuando el préstamo está devuelto,
-cero cuando está vencido y un entero no negativo cuando
-continúa abierto.
-
-## Seguridad
-
-El backend obtiene el identificador del usuario desde
-request.user.usuario_id.
-
-Las consultas filtran por ese identificador.
-
-No es posible consultar préstamos ajenos mediante
-parámetros de URL.
-
-## Respuestas
-
-- 200: Consulta correcta.
-- 400: Filtro o parámetros inválidos.
-- 401: Sin autenticación.
-- 403: Rol no autorizado.
-- 404: Página de resultados inexistente.
-- 405: Método no permitido.
-
-## Dependencias
-
-Utiliza los modelos Prestamo, Ejemplar y Libro existentes.
-Reutiliza la autenticación y permisos del ticket 3.1.
-
-La consulta no modifica la información almacenada.
+```json
+{
+  "count": 1,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "prestamo_id": 15,
+      "libro": {
+        "libro_id": 3,
+        "titulo": "Fundamentos de redes modernas",
+        "isbn": "9786000000016"
+      },
+      "ejemplar": {
+        "ejemplar_id": 12,
+        "codigo_inventario": "PDEM01-01"
+      },
+      "fecha_prestamo": "2026-10-15",
+      "fecha_limite": "2026-11-14",
+      "fecha_devolucion": null,
+      "estado": "EN_PRESTAMO",
+      "dias_restantes": 30
+    }
+  ],
+  "resumen": {
+    "total": 1,
+    "activos": 1,
+    "vencidos": 0,
+    "devueltos": 0
+  },
+  "estado_cuenta": {
+    "limite_prestamos_activos": 5,
+    "prestamos_activos": 1,
+    "cupos_disponibles": 4,
+    "adeudos_pendientes": false,
+    "bloqueo_vigente": false,
+    "puede_solicitar": true,
+    "motivos": []
+  }
+}

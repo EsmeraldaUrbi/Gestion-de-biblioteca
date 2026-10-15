@@ -1,72 +1,158 @@
-<section class="prestamos-page">
+<section class="registro-page">
+
+  <!-- ENCABEZADO -->
+
   <header class="page-header">
-    <div>
-      <p class="eyebrow">Servicios bibliotecarios / Ventanilla</p>
-      <h1>Registro de préstamo</h1>
+    <div class="page-heading">
+      <p class="eyebrow">
+        <span aria-hidden="true">▣</span>
+        TERMINAL DE CIRCULACIÓN · MÓDULO BIBLIOTECARIO
+      </p>
+
+      <h1>Nuevo Préstamo de Material Bibliográfico</h1>
+
       <p class="description">
-        Selecciona un lector y un ejemplar para registrar
-        la entrega de un libro.
+        Registro guiado en ventanilla con validación
+        automática de disponibilidad física
+        y límites del usuario.
       </p>
     </div>
 
-    <span class="role-label">
-      Bibliotecario
-    </span>
+    <div class="terminal-badge">
+      <span class="terminal-indicator">
+        <span class="status-dot"></span>
+        Registro asistido
+      </span>
+
+      <div class="terminal-details">
+        <small>MÓDULO</small>
+        <strong>Ventanilla</strong>
+      </div>
+    </div>
   </header>
 
-  <div class="steps" aria-label="Etapas del registro">
-    <div class="step" [class.step--complete]="usuarioSeleccionado()">
-      <span class="step-number">1</span>
-      <span>Identificar lector</span>
+  <!-- PROCESO DE CUATRO PASOS -->
+
+  <nav class="steps" aria-label="Etapas del préstamo">
+
+    <div
+      class="step"
+      [class.step--active]="
+        !usuarioSeleccionado()
+      "
+      [class.step--complete]="
+        usuarioSeleccionado()
+      "
+    >
+      <span class="step-number">
+        {{ usuarioSeleccionado() ? '✓' : '1' }}
+      </span>
+
+      <div>
+        <small>PASO 1</small>
+        <strong>Usuario verificado</strong>
+      </div>
     </div>
 
-    <div class="step" [class.step--complete]="ejemplarSeleccionado()">
-      <span class="step-number">2</span>
-      <span>Seleccionar ejemplar</span>
+    <div
+      class="step"
+      [class.step--active]="
+        usuarioSeleccionado() && !ejemplarSeleccionado()
+      "
+      [class.step--complete]="
+        ejemplarSeleccionado()
+      "
+    >
+      <span class="step-number">
+        {{ ejemplarSeleccionado() ? '✓' : '2' }}
+      </span>
+
+      <div>
+        <small>PASO 2</small>
+        <strong>Libro y ejemplar</strong>
+      </div>
     </div>
 
-    <div class="step" [class.step--complete]="prestamoRegistrado()">
-      <span class="step-number">3</span>
-      <span>Confirmar préstamo</span>
+    <div
+      class="step"
+      [class.step--active]="
+        ejemplarSeleccionado() && !prestamoRegistrado()
+      "
+      [class.step--complete]="
+        elegibilidad()?.elegible && !prestamoRegistrado()
+      "
+    >
+      <span class="step-number">
+        {{
+          elegibilidad()?.elegible
+            ? '✓'
+            : '3'
+        }}
+      </span>
+
+      <div>
+        <small>PASO 3</small>
+        <strong>Condiciones y plazos</strong>
+      </div>
     </div>
-  </div>
+
+    <div
+      class="step"
+      [class.step--complete]="prestamoRegistrado()"
+    >
+      <span class="step-number">
+        {{ prestamoRegistrado() ? '✓' : '4' }}
+      </span>
+
+      <div>
+        <small>PASO 4</small>
+        <strong>Emisión de préstamo</strong>
+      </div>
+    </div>
+  </nav>
+
+  <!-- COMPROBANTE DE REGISTRO EXITOSO -->
 
   @if (prestamoRegistrado(); as prestamo) {
     <section class="success-card" role="status">
-      <div class="success-symbol" aria-hidden="true">✓</div>
+      <span class="success-icon" aria-hidden="true">✓</span>
 
       <div class="success-content">
-        <h2>Préstamo registrado correctamente</h2>
+        <span class="success-eyebrow">
+          OPERACIÓN COMPLETADA
+        </span>
+
+        <h2>Préstamo emitido correctamente</h2>
 
         <p>
-          La operación se guardó en el sistema y el ejemplar
-          quedó asociado al lector.
+          El ejemplar quedó asignado al lector
+          y registrado en el sistema.
         </p>
 
-        <div class="success-details">
-          <span>
-            <small>Folio</small>
+        <div class="success-grid">
+          <div>
+            <small>Folio de préstamo</small>
             <strong>#{{ prestamo.prestamo_id }}</strong>
-          </span>
+          </div>
 
-          <span>
+          <div>
             <small>Lector</small>
             <strong>{{ prestamo.usuario.nombre }}</strong>
-          </span>
+          </div>
 
-          <span>
+          <div>
             <small>Ejemplar</small>
             <strong>
               {{ prestamo.ejemplar.codigo_inventario }}
             </strong>
-          </span>
+          </div>
 
-          <span>
-            <small>Devolución prevista</small>
+          <div>
+            <small>Fecha límite</small>
             <strong>
               {{ formatearFecha(prestamo.fecha_limite) }}
             </strong>
-          </span>
+          </div>
         </div>
       </div>
 
@@ -75,35 +161,51 @@
         class="button button-primary"
         (click)="nuevaOperacion()"
       >
-        Registrar otro préstamo
+        Nuevo préstamo
       </button>
     </section>
   }
 
-  <div class="form-layout">
-    <div class="form-main">
+  <div class="desk-layout">
 
-      <!-- PASO 1: LECTOR -->
+    <!-- COLUMNA PRINCIPAL -->
+
+    <div class="desk-main">
+
+      <!-- PASO 1: USUARIO -->
 
       <section
-        class="panel"
-        aria-labelledby="titulo-lector"
+        class="work-card"
+        aria-labelledby="titulo-usuario"
       >
-        <div class="panel-heading">
-          <div class="heading-number">01</div>
+        <div class="work-heading">
+          <div class="work-heading-title">
+            <span class="section-number">1</span>
 
-          <div>
-            <h2 id="titulo-lector">Datos del lector</h2>
-            <p>
-              Localiza al estudiante o docente que solicita
-              el préstamo.
-            </p>
+            <div>
+              <span class="section-eyebrow">
+                IDENTIFICACIÓN DEL LECTOR
+              </span>
+
+              <h2 id="titulo-usuario">
+                Usuario Solicitante
+              </h2>
+            </div>
           </div>
+
+          @if (usuarioSeleccionado()) {
+            <span class="header-chip">
+              ✓ Seleccionado
+            </span>
+          }
         </div>
 
-        <div class="panel-body">
+        <div class="work-body">
+
+          <!-- BÚSQUEDA DE USUARIO -->
+
           <label for="buscar-lector" class="field-label">
-            Nombre o correo institucional
+            Buscar por nombre o correo electrónico
           </label>
 
           <div class="search-row">
@@ -113,7 +215,7 @@
               class="text-input"
               [formControl]="busquedaUsuario"
               [disabled]="registrando()"
-              placeholder="Ej. Esmeralda o esme@bibliotech.com"
+              placeholder="Nombre o correo del lector"
               autocomplete="off"
               (keydown.enter)="buscarUsuarios()"
             />
@@ -121,10 +223,16 @@
             <button
               type="button"
               class="button button-primary"
-              [disabled]="cargandoUsuarios() || registrando()"
+              [disabled]="
+                cargandoUsuarios() || registrando()
+              "
               (click)="buscarUsuarios()"
             >
-              {{ cargandoUsuarios() ? 'Buscando...' : 'Buscar lector' }}
+              {{
+                cargandoUsuarios()
+                  ? 'Buscando...'
+                  : 'Consultar usuario'
+              }}
             </button>
           </div>
 
@@ -134,10 +242,12 @@
             </p>
           }
 
+          <!-- RESULTADOS -->
+
           @if (usuarios().length > 0) {
             <div
-              class="selection-list"
-              aria-label="Resultados de lectores"
+              class="results-list"
+              aria-label="Lectores encontrados"
             >
               @for (
                 usuario of usuarios();
@@ -145,23 +255,26 @@
               ) {
                 <button
                   type="button"
-                  class="selection-item"
-                  [class.selection-item--selected]="
-                    usuarioSeleccionado()?.usuario_id === usuario.usuario_id
+                  class="result-item"
+                  [class.result-item--selected]="
+                    usuarioSeleccionado()?.usuario_id ===
+                    usuario.usuario_id
                   "
                   [disabled]="registrando()"
                   (click)="seleccionarUsuario(usuario)"
                 >
-                  <span class="avatar" aria-hidden="true">
-                    {{ usuario.nombre.charAt(0).toUpperCase() }}
+                  <span class="result-avatar" aria-hidden="true">
+                    {{
+                      usuario.nombre.charAt(0).toUpperCase()
+                    }}
                   </span>
 
-                  <span class="selection-info">
+                  <span class="result-info">
                     <strong>{{ usuario.nombre }}</strong>
                     <small>{{ usuario.email }}</small>
                   </span>
 
-                  <span class="chip">
+                  <span class="role-chip">
                     {{ nombreRol(usuario) }}
                   </span>
                 </button>
@@ -177,59 +290,106 @@
             </p>
           }
 
+          <!-- USUARIO SELECCIONADO -->
+
           @if (usuarioSeleccionado(); as usuario) {
-            <div class="chosen-card">
-              <div class="chosen-heading">
-                <span>LECTOR SELECCIONADO</span>
-                <span class="chosen-check">✓</span>
+            <div class="selected-user">
+
+              <div class="selected-user-top">
+                <span>
+                  USUARIO #{{ usuario.usuario_id }}
+                </span>
+
+                <span class="document-chip">
+                  ✓ Identificado
+                </span>
               </div>
 
-              <strong>{{ usuario.nombre }}</strong>
-              <p>{{ usuario.email }}</p>
+              <div class="selected-user-content">
+                <div
+                  class="user-avatar"
+                  aria-hidden="true"
+                >
+                  {{
+                    usuario.nombre.charAt(0).toUpperCase()
+                  }}
+                </div>
 
-              <div class="chosen-meta">
-                <span>
-                  ID de usuario:
-                  <b>{{ usuario.usuario_id }}</b>
-                </span>
+                <div class="user-profile">
+                  <h3>{{ usuario.nombre }}</h3>
 
-                <span>
-                  Rol:
-                  <b>{{ nombreRol(usuario) }}</b>
-                </span>
+                  <span class="user-role">
+                    {{ nombreRol(usuario) }}
+                  </span>
 
-                <span>
-                  Límite:
-                  <b>
+                  <p>{{ usuario.email }}</p>
+                </div>
+
+                <div class="user-capacity">
+                  <span class="available-label">
+                    <span class="status-dot"></span>
+                    Lector registrado
+                  </span>
+
+                  <strong>
+                    Límite de préstamos:
                     {{ usuario.rol.limite_prestamos_activos }}
-                    préstamos
-                  </b>
-                </span>
+                  </strong>
+                </div>
               </div>
             </div>
           }
+
+          <!-- NOTA DE REGLAS -->
+
+          <div class="info-note">
+            <span class="info-icon" aria-hidden="true">
+              ⓘ
+            </span>
+
+            <p>
+              <strong>Regla de negocio:</strong>
+              el sistema verifica el límite de préstamos,
+              la disponibilidad del ejemplar y posibles
+              adeudos o bloqueos antes de autorizar
+              el registro.
+            </p>
+          </div>
         </div>
       </section>
 
       <!-- PASO 2: LIBRO Y EJEMPLAR -->
 
       <section
-        class="panel"
-        aria-labelledby="titulo-libro"
+        class="work-card"
+        aria-labelledby="titulo-ejemplar"
       >
-        <div class="panel-heading">
-          <div class="heading-number">02</div>
+        <div class="work-heading">
+          <div class="work-heading-title">
+            <span class="section-number">2</span>
 
-          <div>
-            <h2 id="titulo-libro">Libro y ejemplar físico</h2>
-            <p>
-              Busca el título y selecciona la copia
-              que se entregará.
-            </p>
+            <div>
+              <span class="section-eyebrow">
+                IDENTIFICACIÓN DEL MATERIAL
+              </span>
+
+              <h2 id="titulo-ejemplar">
+                Selección del Libro y Ejemplar Físico
+              </h2>
+            </div>
           </div>
+
+          @if (libroSeleccionado()) {
+            <span class="header-chip">
+              Libro seleccionado
+            </span>
+          }
         </div>
 
-        <div class="panel-body">
+        <div class="work-body">
+
+          <!-- BÚSQUEDA BIBLIOGRÁFICA -->
+
           <label for="buscar-libro" class="field-label">
             Título del libro o ISBN
           </label>
@@ -241,7 +401,7 @@
               class="text-input"
               [formControl]="busquedaLibro"
               [disabled]="registrando()"
-              placeholder="Ej. Fundamentos de redes modernas"
+              placeholder="Escribe el título o ISBN del libro"
               autocomplete="off"
               (keydown.enter)="buscarLibros()"
             />
@@ -249,10 +409,16 @@
             <button
               type="button"
               class="button button-primary"
-              [disabled]="cargandoLibros() || registrando()"
+              [disabled]="
+                cargandoLibros() || registrando()
+              "
               (click)="buscarLibros()"
             >
-              {{ cargandoLibros() ? 'Buscando...' : 'Buscar libro' }}
+              {{
+                cargandoLibros()
+                  ? 'Consultando...'
+                  : 'Consultar acervo'
+              }}
             </button>
           </div>
 
@@ -262,36 +428,43 @@
             </p>
           }
 
+          <!-- RESULTADOS DE LIBROS -->
+
           @if (libros().length > 0) {
             <div
-              class="selection-list"
-              aria-label="Resultados de libros"
+              class="results-list"
+              aria-label="Libros encontrados"
             >
-              @for (libro of libros(); track libro.libro_id) {
+              @for (
+                libro of libros();
+                track libro.libro_id
+              ) {
                 <button
                   type="button"
-                  class="selection-item"
-                  [class.selection-item--selected]="
+                  class="result-item"
+                  [class.result-item--selected]="
                     libroSeleccionado()?.libro_id === libro.libro_id
                   "
                   [disabled]="registrando()"
                   (click)="seleccionarLibro(libro)"
                 >
-                  <span class="book-icon" aria-hidden="true">
+                  <span class="book-result-icon" aria-hidden="true">
                     ▣
                   </span>
 
-                  <span class="selection-info">
+                  <span class="result-info">
                     <strong>{{ libro.titulo }}</strong>
+
                     <small>
                       ISBN: {{ libro.isbn }}
+
                       @if (libro.autores.length > 0) {
-                        · {{ libro.autores[0].nombre }}
+                        · {{ libro.autores[0]?.nombre }}
                       }
                     </small>
                   </span>
 
-                  <span class="select-label">
+                  <span class="result-action">
                     Seleccionar
                   </span>
                 </button>
@@ -306,40 +479,85 @@
             </p>
           }
 
+          <!-- FICHA DEL LIBRO -->
+
           @if (libroSeleccionado(); as libro) {
             <div class="selected-book">
-              <span class="section-caption">
-                LIBRO SELECCIONADO
-              </span>
+              <div class="book-top">
+                <span class="classification-chip">
+                  ISBN {{ libro.isbn }}
+                </span>
 
-              <strong>{{ libro.titulo }}</strong>
+                <span class="stock-chip">
+                  {{ ejemplares().length }}
+                  ejemplares registrados
+                </span>
+              </div>
 
-              <p>
-                ISBN {{ libro.isbn }}
-                · ID {{ libro.libro_id }}
+              <h3>{{ libro.titulo }}</h3>
+
+              <p class="book-authors">
+                @if (libro.autores.length > 0) {
+                  @for (
+                    autor of libro.autores;
+                    track autor.autor_id
+                  ) {
+                    {{ autor.nombre }}
+                    @if (!$last) {
+                      ·
+                    }
+                  }
+                } @else {
+                  Autor no registrado
+                }
               </p>
+
+              <div class="book-details">
+                <span>
+                  Libro #{{ libro.libro_id }}
+                </span>
+
+                @if (libro.fecha_publicacion) {
+                  <span>
+                    Publicación:
+                    {{ libro.fecha_publicacion.slice(0, 4) }}
+                  </span>
+                }
+
+                @if (libro.categorias.length > 0) {
+                  <span>
+                    {{ libro.categorias[0]?.nombre_categoria }}
+                  </span>
+                }
+              </div>
             </div>
 
-            <div class="copies-header">
+            <div class="copies-heading">
               <div>
-                <h3>Ejemplares registrados</h3>
+                <h3>
+                  Selecciona el ejemplar específico
+                  para asignación
+                </h3>
+
                 <p>
-                  Selecciona una copia con estado operativo ACTIVO.
+                  Cada copia tiene un código de inventario
+                  único.
                 </p>
               </div>
 
-              <span class="count-label">
-                {{ ejemplaresActivos() }} operativos
+              <span class="copies-counter">
+                {{ ejemplaresActivos() }}
+                operativos
               </span>
             </div>
 
             @if (cargandoEjemplares()) {
               <p class="loading-message" role="status">
-                Consultando ejemplares...
+                Consultando ejemplares físicos...
               </p>
             } @else if (errorEjemplares(); as error) {
               <div class="inline-error" role="alert">
-                {{ error }}
+                <p>{{ error }}</p>
 
                 <button
                   type="button"
@@ -351,10 +569,13 @@
               </div>
             } @else if (ejemplares().length === 0) {
               <p class="empty-message">
-                Este libro todavía no tiene ejemplares físicos
-                registrados.
+                Este libro no tiene ejemplares
+                físicos registrados.
               </p>
             } @else {
+
+              <!-- COPIAS FÍSICAS -->
+
               <div class="copies-list">
                 @for (
                   ejemplar of ejemplares();
@@ -362,10 +583,13 @@
                 ) {
                   <button
                     type="button"
-                    class="copy-item"
-                    [class.copy-item--selected]="
+                    class="copy-option"
+                    [class.copy-option--selected]="
                       ejemplarSeleccionado()?.ejemplar_id ===
                       ejemplar.ejemplar_id
+                    "
+                    [class.copy-option--unavailable]="
+                      ejemplar.estado !== 'ACTIVO'
                     "
                     [disabled]="
                       ejemplar.estado !== 'ACTIVO' ||
@@ -373,222 +597,343 @@
                     "
                     (click)="seleccionarEjemplar(ejemplar)"
                   >
-                    <span class="copy-radio" aria-hidden="true"></span>
+                    <span
+                      class="copy-radio"
+                      aria-hidden="true"
+                    ></span>
 
-                    <span class="copy-info">
+                    <span class="copy-description">
                       <strong>
-                        {{ ejemplar.codigo_inventario }}
+                        Ejemplar
+                        #{{ ejemplar.codigo_inventario }}
                       </strong>
 
                       <small>
-                        Ejemplar #{{ ejemplar.ejemplar_id }}
+                        ID de ejemplar:
+                        {{ ejemplar.ejemplar_id }}
                       </small>
                     </span>
 
                     <span
-                      class="status-pill"
-                      [class.status-pill--active]="
+                      class="copy-state"
+                      [class.copy-state--active]="
                         ejemplar.estado === 'ACTIVO'
                       "
-                      [class.status-pill--disabled]="
+                      [class.copy-state--inactive]="
                         ejemplar.estado !== 'ACTIVO'
                       "
                     >
-                      {{
-                        ejemplar.estado === 'ACTIVO'
-                          ? 'Operativo'
-                          : ejemplar.estado === 'MANTENIMIENTO'
-                            ? 'Mantenimiento'
-                            : 'Baja'
-                      }}
+                      Estado:
+                      {{ ejemplar.estado }}
                     </span>
+
+                    @if (
+                      ejemplarSeleccionado()?.ejemplar_id ===
+                      ejemplar.ejemplar_id
+                    ) {
+                      <span class="selected-label">
+                        SELECCIONADO
+                      </span>
+                    }
                   </button>
                 }
               </div>
 
-              <p class="helper-text">
-                Un ejemplar operativo también puede estar prestado.
-                La disponibilidad se confirma con el servidor.
+              <p class="copies-note">
+                <span aria-hidden="true">ⓘ</span>
+                ACTIVO es un estado operativo.
+                La disponibilidad para préstamo
+                se confirma mediante la validación.
               </p>
             }
           }
         </div>
       </section>
-
     </div>
 
-    <!-- PASO 3: RESUMEN Y CONFIRMACIÓN -->
+    <!-- COLUMNA DERECHA -->
 
-    <aside class="summary-panel" aria-labelledby="titulo-resumen">
-      <div class="summary-heading">
-        <div class="heading-number">03</div>
+    <aside class="desk-sidebar">
 
-        <div>
-          <h2 id="titulo-resumen">Confirmar préstamo</h2>
-          <p>Revisa los datos antes de registrar.</p>
-        </div>
-      </div>
+      <!-- PASO 3: CONDICIONES -->
 
-      <div class="summary-body">
-        <div class="summary-field">
-          <span>Lector</span>
+      <section
+        class="side-card conditions-card"
+        aria-labelledby="titulo-condiciones"
+      >
+        <div class="side-heading">
+          <span class="section-number">3</span>
 
-          <strong>
-            {{ usuarioSeleccionado()?.nombre || 'Sin seleccionar' }}
-          </strong>
-        </div>
+          <div>
+            <span class="section-eyebrow">
+              VALIDACIÓN DEL SISTEMA
+            </span>
 
-        <div class="summary-field">
-          <span>Libro</span>
-
-          <strong>
-            {{ libroSeleccionado()?.titulo || 'Sin seleccionar' }}
-          </strong>
-        </div>
-
-        <div class="summary-field">
-          <span>Código de ejemplar</span>
-
-          <strong>
-            {{
-              ejemplarSeleccionado()?.codigo_inventario
-                || 'Sin seleccionar'
-            }}
-          </strong>
-        </div>
-
-        <div class="summary-divider"></div>
-
-        <div class="summary-field">
-          <span>Fecha de préstamo</span>
-
-          <strong>
-            @if (elegibilidad(); as evaluacion) {
-              {{ formatearFecha(evaluacion.fecha_prestamo) }}
-            } @else {
-              Pendiente
-            }
-          </strong>
-        </div>
-
-        <div class="summary-field">
-          <span>Fecha límite de devolución</span>
-
-          <strong class="date-emphasis">
-            @if (elegibilidad(); as evaluacion) {
-              {{ formatearFecha(evaluacion.fecha_limite) }}
-            } @else {
-              Pendiente
-            }
-          </strong>
-        </div>
-
-        <div class="term-note">
-          <span aria-hidden="true">ⓘ</span>
-          El préstamo tendrá una duración de
-          <strong>30 días naturales</strong>,
-          calculados automáticamente por el sistema.
-        </div>
-
-        <div class="summary-divider"></div>
-
-        <h3>Validación de préstamo</h3>
-
-        @if (!usuarioSeleccionado() || !ejemplarSeleccionado()) {
-          <div class="validation-state validation-state--neutral">
-            Selecciona un lector y un ejemplar para
-            comprobar las condiciones del préstamo.
+            <h2 id="titulo-condiciones">
+              Condiciones del Préstamo
+            </h2>
           </div>
-        } @else if (evaluando()) {
-          <div
-            class="validation-state validation-state--neutral"
-            role="status"
-          >
-            Verificando disponibilidad y condiciones del lector...
+        </div>
+
+        <div class="side-body">
+
+          <div class="dates-card">
+            <div class="date-block">
+              <span>FECHA DE EMISIÓN</span>
+
+              <strong>
+                @if (elegibilidad(); as evaluacion) {
+                  {{ formatearFecha(evaluacion.fecha_prestamo) }}
+                } @else {
+                  Pendiente
+                }
+              </strong>
+            </div>
+
+            <div class="dates-divider"></div>
+
+            <div class="date-block">
+              <div class="date-heading">
+                <span>
+                  FECHA LÍMITE DE DEVOLUCIÓN
+                </span>
+
+                <span class="readonly-chip">
+                  No editable
+                </span>
+              </div>
+
+              <strong class="date-highlight">
+                @if (elegibilidad(); as evaluacion) {
+                  {{
+                    formatearFecha(evaluacion.fecha_limite)
+                  }}
+                } @else {
+                  Pendiente de cálculo
+                }
+              </strong>
+
+              <small>
+                30 días naturales · Calculado
+                automáticamente por el servidor
+              </small>
+            </div>
           </div>
-        } @else if (errorElegibilidad(); as error) {
-          <div
-            class="validation-state validation-state--error"
-            role="alert"
-          >
-            {{ error }}
-          </div>
-        } @else if (elegibilidad(); as evaluacion) {
-          @if (evaluacion.elegible) {
+
+          <!-- RESULTADO DE ELEGIBILIDAD -->
+
+          @if (
+            !usuarioSeleccionado() ||
+            !ejemplarSeleccionado()
+          ) {
+            <div class="validation-box validation-box--neutral">
+              <span class="validation-icon">ⓘ</span>
+
+              <div>
+                <strong>Validación pendiente</strong>
+                <p>
+                  Selecciona un lector y un ejemplar
+                  físico para consultar las condiciones.
+                </p>
+              </div>
+            </div>
+          } @else if (evaluando()) {
             <div
-              class="validation-state validation-state--success"
+              class="validation-box validation-box--neutral"
               role="status"
             >
-              <strong>✓ Préstamo autorizado</strong>
+              <span class="validation-icon">◷</span>
 
-              <span>
-                El usuario cumple las condiciones.
-                Actualmente tiene
-                {{ evaluacion.prestamos_activos }}
-                de
-                {{ evaluacion.limite_prestamos_activos }}
-                préstamos activos.
-              </span>
+              <div>
+                <strong>Verificando condiciones...</strong>
+                <p>
+                  El servidor está comprobando
+                  la elegibilidad del préstamo.
+                </p>
+              </div>
             </div>
-          } @else {
+          } @else if (errorElegibilidad(); as error) {
             <div
-              class="validation-state validation-state--error"
+              class="validation-box validation-box--error"
               role="alert"
             >
-              <strong>No es posible registrar el préstamo</strong>
+              <span class="validation-icon">!</span>
 
-              @for (
-                motivo of evaluacion.motivos;
-                track motivo.codigo
-              ) {
-                <span>{{ motivo.mensaje }}</span>
-              }
+              <div>
+                <strong>No se pudo verificar</strong>
+                <p>{{ error }}</p>
+              </div>
+            </div>
+          } @else if (elegibilidad(); as evaluacion) {
+
+            @if (evaluacion.elegible) {
+              <div
+                class="validation-box validation-box--success"
+                role="status"
+              >
+                <span class="validation-icon">✓</span>
+
+                <div>
+                  <strong>
+                    Todas las condiciones aprobadas
+                  </strong>
+
+                  <p>
+                    El lector cumple las condiciones
+                    verificadas por el servidor
+                    y el ejemplar puede asignarse.
+                  </p>
+                </div>
+              </div>
+            } @else {
+              <div
+                class="validation-box validation-box--error"
+                role="alert"
+              >
+                <span class="validation-icon">!</span>
+
+                <div>
+                  <strong>
+                    El préstamo no está autorizado
+                  </strong>
+
+                  @for (
+                    motivo of evaluacion.motivos;
+                    track motivo.codigo
+                  ) {
+                    <p>{{ motivo.mensaje }}</p>
+                  }
+                </div>
+              </div>
+            }
+
+            <!-- CAPACIDAD COMPROBADA -->
+
+            <div class="limit-summary">
+              <span>PRÉSTAMOS DEL LECTOR</span>
+
+              <strong>
+                {{ evaluacion.prestamos_activos }}
+                /
+                {{ evaluacion.limite_prestamos_activos }}
+              </strong>
+
+              <small>
+                Préstamos activos respecto
+                al límite de su rol.
+              </small>
             </div>
           }
-        }
 
-        @if (errorRegistro(); as error) {
-          <div
-            class="validation-state validation-state--error"
-            role="alert"
-          >
-            {{ error }}
+          <!-- POLÍTICAS IMPLEMENTADAS -->
+
+          <div class="policies">
+            <h3>POLÍTICAS APLICADAS</h3>
+
+            <div class="policy-row">
+              <span>Plazo de préstamo</span>
+              <strong>30 días naturales</strong>
+            </div>
+
+            <div class="policy-row">
+              <span>Disponibilidad</span>
+              <strong>
+                Verificada al registrar
+              </strong>
+            </div>
+
+            <div class="policy-row">
+              <span>Límite de préstamos</span>
+              <strong>
+                Según rol del lector
+              </strong>
+            </div>
           </div>
-        }
 
-        @if (
-          usuarioSeleccionado() &&
-          ejemplarSeleccionado() &&
-          !prestamoRegistrado()
-        ) {
+          <div class="policy-note">
+            <span aria-hidden="true">ⓘ</span>
+
+            <p>
+              <strong>Validación automática:</strong>
+              si el lector alcanza su límite,
+              presenta adeudos o tiene un bloqueo
+              vigente, el préstamo se rechaza
+              indicando el motivo.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- PASO 4: AUTORIZACIÓN -->
+
+      <section
+        class="side-card confirmation-card"
+        aria-labelledby="titulo-confirmacion"
+      >
+        <div class="confirmation-heading">
+          <span>PASO 4 · CONFIRMACIÓN</span>
+
+          <h2 id="titulo-confirmacion">
+            Autorización de Préstamo
+          </h2>
+        </div>
+
+        <div class="confirmation-body">
+          @if (
+            usuarioSeleccionado() &&
+            ejemplarSeleccionado() &&
+            !prestamoRegistrado()
+          ) {
+            <button
+              type="button"
+              class="button button-secondary button-full"
+              [disabled]="evaluando() || registrando()"
+              (click)="consultarElegibilidad()"
+            >
+              ↻ Verificar condiciones
+            </button>
+          }
+
           <button
             type="button"
-            class="button button-secondary button-full"
-            [disabled]="evaluando() || registrando()"
-            (click)="consultarElegibilidad()"
+            class="button button-primary button-full confirm-button"
+            [disabled]="!puedeRegistrar()"
+            (click)="registrarPrestamo()"
           >
-            Volver a verificar
+            {{
+              registrando()
+                ? 'Registrando préstamo...'
+                : '✓ Confirmar y emitir préstamo'
+            }}
           </button>
-        }
 
-        <button
-          type="button"
-          class="button button-primary button-full confirm-button"
-          [disabled]="!puedeRegistrar()"
-          (click)="registrarPrestamo()"
-        >
-          {{
-            registrando()
-              ? 'Registrando préstamo...'
-              : 'Confirmar y registrar préstamo'
-          }}
-        </button>
+          @if (errorRegistro(); as error) {
+            <div
+              class="registration-error"
+              role="alert"
+            >
+              {{ error }}
+            </div>
+          }
 
-        <p class="confirmation-note">
-          La operación se registrará únicamente después
-          de la validación definitiva del servidor.
-        </p>
-      </div>
+          <p class="confirmation-note">
+            La confirmación registra el préstamo
+            en el sistema y asigna el ejemplar
+            al lector seleccionado.
+          </p>
+
+          @if (!prestamoRegistrado()) {
+            <button
+              type="button"
+              class="cancel-button"
+              [disabled]="registrando()"
+              (click)="nuevaOperacion()"
+            >
+              Limpiar operación
+            </button>
+          }
+        </div>
+      </section>
     </aside>
   </div>
 </section>

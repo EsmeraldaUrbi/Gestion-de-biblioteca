@@ -21,6 +21,7 @@ import {
 } from '../../../../core/auth/services/auth-session.service';
 
 import {
+  EstadoCuentaPrestamos,
   FiltroMisPrestamos,
   MiPrestamo,
   ResumenMisPrestamos,
@@ -84,6 +85,9 @@ export class MisPrestamosComponent implements OnInit {
     devueltos: 0,
   });
 
+  readonly estadoCuenta =
+    signal<EstadoCuentaPrestamos | null>(null);
+
   readonly filtroActual =
     signal<FiltroMisPrestamos>('todos');
 
@@ -121,6 +125,22 @@ export class MisPrestamosComponent implements OnInit {
       : 'Estudiante',
   );
 
+  readonly porcentajeCapacidad = computed(() => {
+    const cuenta = this.estadoCuenta();
+
+    if (!cuenta || cuenta.limite_prestamos_activos <= 0) {
+      return 0;
+    }
+
+    return Math.min(
+      100,
+      Math.round(
+        cuenta.prestamos_activos * 100 /
+        cuenta.limite_prestamos_activos,
+      ),
+    );
+  });
+
   ngOnInit(): void {
     this.cargarPrestamos();
   }
@@ -152,20 +172,28 @@ export class MisPrestamosComponent implements OnInit {
 
           this.prestamos.set(respuesta.results);
           this.resumen.set(respuesta.resumen);
+          this.estadoCuenta.set(
+            respuesta.estado_cuenta,
+          );
+
           this.total.set(respuesta.count);
           this.pagina.set(paginaSolicitada);
 
           this.cargando.set(false);
         },
+
         error: (error: HttpErrorResponse) => {
           if (version !== this.versionConsulta) {
             return;
           }
 
           this.prestamos.set([]);
+          this.estadoCuenta.set(null);
+
           this.error.set(
             this.obtenerMensajeError(error),
           );
+
           this.cargando.set(false);
         },
       });

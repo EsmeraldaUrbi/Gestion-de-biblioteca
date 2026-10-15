@@ -5,379 +5,650 @@
 
 .mis-prestamos-page {
   display: grid;
-  gap: 24px;
+  gap: 26px;
   padding-bottom: 30px;
+  color: #12233d;
 }
+
+/* ENCABEZADO */
 
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 20px;
+  gap: 24px;
+}
+
+.page-heading {
+  min-width: 0;
 }
 
 .eyebrow {
-  margin: 0 0 8px;
-  color: #0765d8;
-  font-size: 12px;
+  margin: 0 0 9px;
+  color: #4f5664;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.065em;
   text-transform: uppercase;
+}
+
+.eyebrow span {
+  color: #0863d4;
 }
 
 .page-header h1 {
-  margin: 0 0 10px;
-  color: #142238;
-  font-size: clamp(27px, 4vw, 35px);
-  letter-spacing: -0.03em;
+  margin: 0 0 8px;
+  color: #0b1e39;
+  font-size: clamp(28px, 3.5vw, 37px);
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 1.15;
 }
 
 .description {
+  max-width: 600px;
   margin: 0;
-  color: #647084;
-  font-size: 13px;
+  color: #606c7f;
+  font-size: 14px;
   line-height: 1.6;
 }
 
-.role-label {
+.identity-badge {
+  display: flex;
+  align-items: center;
   flex: 0 0 auto;
-  padding: 9px 15px;
-  border: 1px solid #d5e5ff;
-  border-radius: 25px;
-  background: #eaf2ff;
-  color: #1259ab;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.welcome-card,
-.summary-card,
-.history-panel {
-  border: 1px solid #e3e8f1;
+  gap: 11px;
+  padding: 11px 16px;
+  border: 1px solid #e6ebf4;
   border-radius: 13px;
   background: #ffffff;
-  box-shadow: 0 4px 18px rgb(20 35 60 / 4%);
+  box-shadow: 0 2px 10px rgb(22 39 67 / 3%);
 }
 
-.welcome-card {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  padding: 22px 24px;
+.identity-icon {
+  display: grid;
+  place-items: center;
+  width: 35px;
+  height: 35px;
+  border-radius: 9px;
+  background: #eaf2ff;
+  color: #0b66d8;
+  font-size: 20px;
 }
 
-.welcome-icon {
+.identity-badge > div {
+  display: grid;
+  gap: 4px;
+}
+
+.identity-badge strong {
+  color: #213550;
+  font-size: 12px;
+}
+
+.identity-badge small {
+  color: #78859b;
+  font-size: 11px;
+}
+
+/* TARJETAS SUPERIORES */
+
+.overview-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+  gap: 16px;
+  align-items: stretch;
+}
+
+.overview-card {
+  min-width: 0;
+  padding: 23px;
+  border: 1px solid #edf0f5;
+  border-radius: 15px;
+  background: #ffffff;
+  box-shadow: 0 4px 15px rgb(17 35 62 / 3%);
+}
+
+.capacity-card {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 23px;
+}
+
+.capacity-heading {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.capacity-icon {
+  display: grid;
+  place-items: center;
   flex: 0 0 auto;
-  width: 54px;
-  height: 54px;
+  width: 44px;
+  height: 44px;
+  border-radius: 11px;
+  background: #eaf1ff;
+  color: #0865d8;
+}
+
+.capacity-icon svg {
+  width: 25px;
+  height: 25px;
+}
+
+.capacity-heading-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.capacity-heading-text > span {
+  display: block;
+  margin: 2px 0 7px;
+  color: #5d6778;
+  font-size: 12px;
+}
+
+.capacity-heading-text h2 {
+  margin: 0;
+  color: #12243e;
+  font-size: 15px;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.capacity-percentage {
+  padding-top: 3px;
+  color: #075fd0;
+  font-size: 18px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.progress-track {
+  width: 100%;
+  height: 9px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e1eafe;
+}
+
+.progress-fill {
+  height: 100%;
+  max-width: 100%;
+  border-radius: 999px;
+  background: #2479f2;
+  transition: width 250ms ease;
+}
+
+.capacity-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: #5c697d;
+  font-size: 11px;
+}
+
+.capacity-footer strong {
+  color: #263750;
+  font-size: 11px;
+  text-align: right;
+}
+
+.account-card {
+  display: grid;
+  align-content: space-between;
+  gap: 17px;
+}
+
+.account-heading {
+  display: flex;
+  gap: 14px;
+}
+
+.account-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 47px;
+  height: 47px;
   border-radius: 12px;
-  background: #102b50;
-  color: #ffffff;
-  font-size: 26px;
+  background: #c7f8e5;
+  color: #077b52;
+  font-size: 24px;
   font-weight: 800;
 }
 
-.welcome-card span {
-  color: #647084;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+.account-icon--warning {
+  background: #ffebd7;
+  color: #b46413;
 }
 
-.welcome-card h2 {
-  margin: 5px 0;
-  color: #142238;
-  font-size: 18px;
-}
-
-.welcome-card p {
-  margin: 0;
-  color: #718097;
-  font-size: 12px;
-  overflow-wrap: anywhere;
-}
-
-.summary-grid {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 15px;
-}
-
-.summary-card {
+.account-eyebrow {
   display: flex;
-  flex-direction: column;
-  gap: 10px;
-  min-width: 0;
-  padding: 21px;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 7px;
+  color: #4b5260;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.045em;
 }
 
-.summary-card > span {
-  color: #637187;
-  font-size: 12px;
-  font-weight: 600;
+.live-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #2479f2;
 }
 
-.summary-card strong {
-  color: #142238;
-  font-size: 32px;
+.account-heading h2 {
+  margin: 0 0 5px;
+  color: #13243e;
+  font-size: 16px;
   font-weight: 750;
 }
 
-.summary-card .danger-number {
-  color: #bd4545;
+.account-heading p {
+  margin: 0;
+  color: #657084;
+  font-size: 12px;
+  line-height: 1.55;
 }
 
-.summary-card small {
-  color: #8792a4;
+.account-note {
+  display: flex;
+  gap: 10px;
+  padding: 13px 14px;
+  border-radius: 10px;
+  background: #eef3fd;
+}
+
+.note-icon {
+  color: #126bd9;
+  font-size: 16px;
+}
+
+.account-note p {
+  margin: 0;
+  color: #4f5f78;
   font-size: 11px;
+  line-height: 1.6;
 }
 
-.history-panel {
-  overflow: hidden;
+.account-note strong {
+  color: #213653;
 }
 
-.history-heading {
+/* FILTROS */
+
+.history-section {
+  display: grid;
+  gap: 17px;
+}
+
+.history-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 23px 24px;
-}
-
-.history-heading h2 {
-  margin: 0 0 6px;
-  color: #142238;
-  font-size: 19px;
-}
-
-.history-heading p {
-  margin: 0;
-  color: #778397;
-  font-size: 12px;
-}
-
-.secondary-button {
-  flex: 0 0 auto;
-  min-height: 38px;
-  padding: 9px 14px;
-  border: 1px solid #d4deea;
-  border-radius: 8px;
-  background: #ffffff;
-  color: #28415f;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.secondary-button:hover:not(:disabled) {
-  background: #f0f5fc;
-  border-color: #b9cde6;
-}
-
-.secondary-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
+  gap: 14px;
 }
 
 .filter-bar {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  padding: 0 24px 20px;
-  border-bottom: 1px solid #edf0f5;
+  gap: 5px;
+  padding: 5px;
+  border-radius: 13px;
+  background: #eaf0fb;
 }
 
 .filter-button {
-  padding: 9px 15px;
-  border: 1px solid #dce3ee;
-  border-radius: 8px;
-  background: #f8fafc;
-  color: #5e6e85;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 42px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: #57657b;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+  transition: background 160ms, color 160ms;
+}
+
+.filter-button:hover:not(.filter-button--active) {
+  background: #f4f7ff;
+}
+
+.filter-button--active {
+  background: #ffffff;
+  color: #122842;
+  box-shadow: 0 2px 8px rgb(18 39 67 / 7%);
+}
+
+.filter-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+
+.filter-label > span {
+  font-size: 15px;
+}
+
+.filter-count {
+  display: grid;
+  place-items: center;
+  min-width: 24px;
+  height: 22px;
+  padding: 0 6px;
+  border-radius: 7px;
+  background: #e0e9fb;
+  color: #315e9c;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.refresh-button,
+.secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 39px;
+  padding: 9px 13px;
+  border: 1px solid #dce5f2;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #2d4768;
   font: inherit;
   font-size: 12px;
   font-weight: 650;
   cursor: pointer;
 }
 
-.filter-button:hover {
-  background: #eef4fd;
+.refresh-button:hover:not(:disabled),
+.secondary-button:hover:not(:disabled) {
+  background: #f1f6ff;
 }
 
-.filter-button--active {
-  border-color: #0c66ce;
-  background: #eaf3ff;
-  color: #0c5cbd;
+.refresh-button:disabled,
+.secondary-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
+
+.refresh-button > span {
+  font-size: 17px;
+}
+
+/* TARJETAS DE PRÉSTAMOS */
 
 .loans-list {
   display: grid;
-  gap: 14px;
-  padding: 20px 24px;
+  gap: 15px;
 }
 
 .loan-card {
   overflow: hidden;
-  border: 1px solid #e4eaf2;
-  border-radius: 11px;
+  border: 1px solid #edf0f5;
+  border-left: 6px solid #c4cedf;
+  border-radius: 13px;
   background: #ffffff;
+  box-shadow: 0 4px 15px rgb(20 38 66 / 3%);
 }
 
-.loan-card:hover {
-  border-color: #c7d8ed;
+.loan-card--active {
+  border-left-color: #55dba0;
+}
+
+.loan-card--overdue {
+  border-left-color: #d52d2d;
+}
+
+.loan-card--returned {
+  border-left-color: #2d7bed;
 }
 
 .loan-main {
   display: flex;
-  align-items: flex-start;
-  gap: 15px;
-  padding: 18px;
-}
-
-.loan-book-icon {
-  display: flex;
-  flex: 0 0 auto;
   align-items: center;
-  justify-content: center;
-  width: 49px;
-  height: 58px;
-  border-radius: 8px;
-  background: #eaf2ff;
-  color: #155bb0;
-  font-size: 27px;
+  justify-content: space-between;
+  gap: 22px;
+  padding: 22px 24px;
 }
 
-.loan-description {
+.loan-information {
   flex: 1;
   min-width: 0;
 }
 
-.loan-label {
-  color: #1260be;
-  font-size: 10px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-}
-
-.loan-description h3 {
-  margin: 6px 0 9px;
-  color: #1a2c45;
-  font-size: 16px;
-  line-height: 1.4;
-}
-
-.loan-description p {
-  margin: 5px 0 0;
-  color: #758297;
-  font-size: 12px;
-  line-height: 1.5;
-}
-
-.loan-description p strong {
-  color: #33455c;
-  font-weight: 700;
+.loan-labels {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-bottom: 13px;
 }
 
 .status-chip {
-  flex: 0 0 auto;
-  padding: 7px 11px;
-  border-radius: 20px;
-  font-size: 11px;
-  font-weight: 700;
-  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.status-chip > span {
+  font-size: 8px;
 }
 
 .status-chip--active {
-  background: #e9f5ed;
-  color: #26774a;
+  background: #e1faed;
+  color: #089b63;
 }
 
 .status-chip--overdue {
-  background: #fff0ed;
-  color: #b64c3f;
+  background: #ffe1de;
+  color: #b91f25;
 }
 
 .status-chip--returned {
-  background: #eef2f8;
-  color: #62718b;
+  background: #e4eeff;
+  color: #1769d7;
 }
 
-.loan-details {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 15px;
-  padding: 15px 18px;
-  border-top: 1px solid #edf0f5;
-  background: #f8fafc;
+.deadline-warning {
+  padding: 5px 9px;
+  border-radius: 7px;
+  background: #e6efff;
+  color: #176add;
+  font-size: 10px;
+  font-weight: 700;
 }
 
-.loan-details > div {
+.loan-reference {
+  color: #8a94a4;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.loan-information h3 {
+  max-width: 490px;
+  margin: 0 0 7px;
+  color: #12233d;
+  font-size: clamp(17px, 2vw, 20px);
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  line-height: 1.4;
+}
+
+.book-isbn {
+  margin: 0 0 13px;
+  color: #5d697b;
+  font-size: 12px;
+}
+
+.book-meta {
   display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0;
-}
-
-.loan-details span {
-  color: #8490a3;
+  flex-wrap: wrap;
+  gap: 12px;
+  color: #657185;
   font-size: 11px;
 }
 
-.loan-details strong {
-  color: #30435e;
-  font-size: 12px;
-  line-height: 1.5;
-  overflow-wrap: anywhere;
+.book-meta strong {
+  color: #263a55;
 }
 
-.loan-details .deadline-overdue {
-  color: #b64c3f;
+.loan-dates {
+  flex: 0 0 235px;
+  min-width: 0;
+  text-align: right;
 }
 
-.state-message {
-  padding: 45px 24px;
-  color: #718097;
-  font-size: 13px;
-  text-align: center;
+.date-caption {
+  display: block;
+  margin-bottom: 7px;
+  color: #4b5566;
+  font-size: 11px;
+  font-weight: 650;
 }
 
-.state-message h3 {
-  margin: 12px 0 8px;
-  color: #263952;
+.primary-date {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 7px;
+  color: #10213d;
   font-size: 17px;
+  font-weight: 800;
+  white-space: nowrap;
 }
 
-.state-message p {
-  margin: 0 0 15px;
+.primary-date > span {
+  color: #1975e6;
+  font-size: 19px;
+}
+
+.primary-date--overdue,
+.primary-date--overdue > span {
+  color: #c2212a;
+}
+
+.date-detail {
+  margin: 8px 0 5px;
+  color: #6d788c;
+  font-size: 11px;
+}
+
+.deadline-detail {
+  margin: 0;
+  color: #07965d;
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.deadline-detail--overdue {
+  color: #c3212d;
+}
+
+.loan-notice {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  margin: 0 24px 19px;
+  padding: 11px 13px;
+  border-radius: 8px;
+  font-size: 11px;
   line-height: 1.6;
 }
 
-.state-message--error {
-  color: #ac3535;
+.loan-notice > span {
+  font-weight: 800;
+}
+
+.loan-notice--overdue {
+  background: #fff0f0;
+  color: #b6222b;
+}
+
+.loan-notice--returned {
+  background: #edf6ff;
+  color: #1762b5;
+}
+
+/* CARGA, VACÍOS Y PAGINACIÓN */
+
+.state-panel {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 52px 22px;
+  border: 1px solid #e7ecf4;
+  border-radius: 13px;
+  background: #ffffff;
+  color: #65738a;
+  text-align: center;
+}
+
+.state-panel h2,
+.state-panel strong {
+  margin: 0;
+  color: #21344f;
+  font-size: 17px;
+}
+
+.state-panel p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.state-panel--error,
+.state-panel--error strong {
+  color: #ad3038;
 }
 
 .empty-icon {
-  margin: 0 auto;
-  color: #a6b7ce;
-  font-size: 35px;
+  color: #9db2d0;
+  font-size: 38px;
+}
+
+.loading-spinner {
+  width: 25px;
+  height: 25px;
+  border: 3px solid #dbe8fa;
+  border-top-color: #1e74dd;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .pagination {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  gap: 15px;
-  padding: 19px 24px;
-  border-top: 1px solid #edf0f5;
+  align-items: center;
+  gap: 16px;
+  padding: 15px 4px;
 }
 
 .pagination > p {
   margin: 0;
-  color: #758297;
+  color: #758298;
   font-size: 12px;
 }
 
@@ -387,81 +658,125 @@
   gap: 11px;
 }
 
-.pagination-controls span {
-  color: #5e6e82;
+.pagination-controls > span {
+  color: #4e5c73;
   font-size: 12px;
   white-space: nowrap;
 }
 
 .page-note {
   margin: 0;
-  color: #8591a2;
-  font-size: 12px;
+  color: #7c889a;
+  font-size: 11px;
+  line-height: 1.6;
   text-align: center;
-  line-height: 1.7;
 }
 
-@media (max-width: 950px) {
-  .summary-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+/* RESPONSIVE */
+
+@media (max-width: 1000px) {
+  .overview-grid {
+    grid-template-columns: 1fr;
   }
 
-  .loan-details {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .loan-dates {
+    flex-basis: 210px;
   }
 }
 
-@media (max-width: 650px) {
+@media (max-width: 750px) {
   .page-header {
     align-items: flex-start;
     flex-direction: column;
   }
 
-  .welcome-card {
-    padding: 18px;
-  }
-
-  .history-heading {
+  .history-toolbar {
+    align-items: stretch;
     flex-direction: column;
-    align-items: flex-start;
   }
 
-  .history-heading,
-  .filter-bar,
-  .loans-list {
-    padding-left: 16px;
-    padding-right: 16px;
+  .refresh-button {
+    align-self: flex-end;
   }
 
   .loan-main {
-    flex-wrap: wrap;
-  }
-
-  .loan-description {
-    flex-basis: calc(100% - 70px);
-  }
-
-  .status-chip {
-    margin-left: 64px;
-  }
-
-  .pagination {
-    flex-direction: column;
     align-items: flex-start;
-    padding: 17px 16px;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .loan-dates {
+    flex: none;
+    width: 100%;
+    padding-top: 14px;
+    border-top: 1px solid #edf0f5;
+    text-align: left;
+  }
+
+  .primary-date {
+    justify-content: flex-start;
   }
 }
 
-@media (max-width: 400px) {
-  .summary-grid {
-    grid-template-columns: 1fr;
+@media (max-width: 520px) {
+  .mis-prestamos-page {
+    gap: 18px;
   }
 
-  .loan-details {
-    grid-template-columns: 1fr;
+  .overview-card {
+    padding: 18px;
+  }
+
+  .capacity-heading {
+    flex-wrap: wrap;
+  }
+
+  .capacity-percentage {
+    margin-left: 56px;
+  }
+
+  .capacity-footer {
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .capacity-footer strong {
+    text-align: left;
+  }
+
+  .filter-bar {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .filter-button {
+    justify-content: space-between;
+  }
+
+  .loan-main {
+    padding: 18px;
+  }
+
+  .loan-notice {
+    margin: 0 18px 17px;
+  }
+
+  .pagination {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .pagination-controls {
     flex-wrap: wrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .progress-fill {
+    transition: none;
+  }
+
+  .loading-spinner {
+    animation: none;
   }
 }

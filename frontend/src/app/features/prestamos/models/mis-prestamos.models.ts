@@ -38,10 +38,26 @@ export interface ResumenMisPrestamos {
   devueltos: number;
 }
 
+export interface MotivoRestriccion {
+  codigo: string;
+  mensaje: string;
+}
+
+export interface EstadoCuentaPrestamos {
+  limite_prestamos_activos: number;
+  prestamos_activos: number;
+  cupos_disponibles: number;
+  adeudos_pendientes: boolean;
+  bloqueo_vigente: boolean;
+  puede_solicitar: boolean;
+  motivos: MotivoRestriccion[];
+}
+
 export interface MisPrestamosResponse {
   count: number;
   next: string | null;
   previous: string | null;
   results: MiPrestamo[];
   resumen: ResumenMisPrestamos;
+  estado_cuenta: EstadoCuentaPrestamos;
 }

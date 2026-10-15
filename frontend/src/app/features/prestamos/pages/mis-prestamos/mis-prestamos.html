@@ -1,163 +1,314 @@
 <section class="mis-prestamos-page">
+
+  <!-- ENCABEZADO -->
+
   <header class="page-header">
-    <div>
+    <div class="page-heading">
       <p class="eyebrow">
-        Biblioteca / Área personal
+        PORTAL ACADÉMICO
+        <span>/ CIRCULACIÓN Y PRÉSTAMOS</span>
       </p>
 
-      <h1>Mis préstamos</h1>
+      <h1>Mis Préstamos de Biblioteca</h1>
 
       <p class="description">
-        Consulta los libros que tienes prestados,
-        sus fechas de devolución y tu historial.
+        Consulta tus libros solicitados, fechas de
+        vencimiento y tu historial de préstamos.
       </p>
     </div>
 
-    <span class="role-label">
-      {{ rolUsuario() }}
-    </span>
+    <div class="identity-badge">
+      <span class="identity-icon" aria-hidden="true">
+        ✦
+      </span>
+
+      <div>
+        <strong>{{ rolUsuario() }}</strong>
+
+        <small>
+          Lector #{{ session.usuario()?.usuario_id }}
+        </small>
+      </div>
+    </div>
   </header>
 
+  <!-- CAPACIDAD Y ESTADO DE CUENTA -->
+
   <section
-    class="welcome-card"
-    aria-label="Información del lector"
+    class="overview-grid"
+    aria-label="Resumen de la cuenta"
   >
-    <div class="welcome-icon" aria-hidden="true">
-      B
-    </div>
+    <article class="overview-card capacity-card">
+      <div class="capacity-heading">
+        <div class="capacity-icon" aria-hidden="true">
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="1.8"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="M12 6c-3-2-6-2-9-1v13c3-1 6-1 9 1"/>
+            <path d="M12 6c3-2 6-2 9-1v13c-3-1-6-1-9 1"/>
+            <path d="M12 6v13"/>
+          </svg>
+        </div>
 
-    <div>
-      <span>Cuenta institucional</span>
+        <div class="capacity-heading-text">
+          <span>Capacidad de Préstamo</span>
 
-      <h2>
-        {{ session.usuario()?.nombre }}
-      </h2>
+          <h2>
+            @if (estadoCuenta(); as cuenta) {
+              Préstamos activos:
+              {{ cuenta.prestamos_activos }}
+              de
+              {{ cuenta.limite_prestamos_activos }}
+              permitidos
+            } @else {
+              Capacidad pendiente de consulta
+            }
+          </h2>
+        </div>
 
-      <p>
-        {{ session.usuario()?.email }}
-      </p>
-    </div>
+        <strong class="capacity-percentage">
+          {{ porcentajeCapacidad() }}%
+        </strong>
+      </div>
+
+      <div
+        class="progress-track"
+        role="progressbar"
+        [attr.aria-valuenow]="
+          estadoCuenta()?.prestamos_activos ?? 0
+        "
+        [attr.aria-valuemin]="0"
+        [attr.aria-valuemax]="
+          estadoCuenta()?.limite_prestamos_activos ?? 0
+        "
+        aria-label="Préstamos activos"
+      >
+        <div
+          class="progress-fill"
+          [style.width.%]="porcentajeCapacidad()"
+        ></div>
+      </div>
+
+      <div class="capacity-footer">
+        <span>
+          {{ resumen().activos }}
+          ejemplares sin devolución
+        </span>
+
+        <strong>
+          @if (estadoCuenta(); as cuenta) {
+            {{ cuenta.cupos_disponibles }}
+            cupos disponibles
+          } @else {
+            —
+          }
+        </strong>
+      </div>
+    </article>
+
+    <!-- ESTADO REAL DEL LECTOR -->
+
+    <article class="overview-card account-card">
+      <div class="account-heading">
+        <div
+          class="account-icon"
+          [class.account-icon--warning]="
+            estadoCuenta()?.puede_solicitar === false
+          "
+          aria-hidden="true"
+        >
+          @if (estadoCuenta()?.puede_solicitar === false) {
+            !
+          } @else {
+            ✓
+          }
+        </div>
+
+        <div>
+          <span class="account-eyebrow">
+            <span class="live-dot"></span>
+            ESTADO DE CUENTA
+          </span>
+
+          <h2>
+            @if (estadoCuenta(); as cuenta) {
+              @if (cuenta.puede_solicitar) {
+                Sin restricciones registradas
+              } @else {
+                Préstamos restringidos
+              }
+            } @else {
+              Consultando condiciones...
+            }
+          </h2>
+
+          <p>
+            @if (estadoCuenta(); as cuenta) {
+              @if (cuenta.puede_solicitar) {
+                Cumples las condiciones personales
+                registradas para solicitar otro préstamo.
+              } @else {
+                Existen condiciones que impiden
+                autorizar un nuevo préstamo.
+              }
+            } @else {
+              Se verificarán los adeudos, bloqueos
+              y el cupo disponible.
+            }
+          </p>
+        </div>
+      </div>
+
+      <div class="account-note">
+        <span class="note-icon" aria-hidden="true">
+          ⓘ
+        </span>
+
+        <div>
+          @if (estadoCuenta(); as cuenta) {
+            @if (cuenta.motivos.length > 0) {
+              @for (
+                motivo of cuenta.motivos;
+                track motivo.codigo
+              ) {
+                <p>
+                  <strong>{{ motivo.mensaje }}</strong>
+                </p>
+              }
+            } @else {
+              <p>
+                No hay adeudos pendientes ni bloqueos
+                vigentes registrados y existe cupo
+                para solicitar un préstamo.
+              </p>
+            }
+
+            @if (resumen().vencidos > 0) {
+              <p>
+                Además, tienes
+                <strong>
+                  {{ resumen().vencidos }}
+                  {{
+                    resumen().vencidos === 1
+                      ? 'préstamo vencido'
+                      : 'préstamos vencidos'
+                  }}
+                </strong>.
+                Consulta sus fechas en el listado.
+              </p>
+            }
+          } @else {
+            <p>
+              La información mostrada depende
+              de los registros actuales del sistema.
+            </p>
+          }
+        </div>
+      </div>
+    </article>
   </section>
 
-  <!-- Resumen personal -->
+  <!-- LISTADO DE PRÉSTAMOS -->
 
   <section
-    class="summary-grid"
-    aria-label="Resumen de préstamos"
-  >
-    <div class="summary-card">
-      <span>Total de préstamos</span>
-
-      <strong>
-        {{ resumen().total }}
-      </strong>
-
-      <small>
-        Historial registrado
-      </small>
-    </div>
-
-    <div class="summary-card">
-      <span>Préstamos activos</span>
-
-      <strong>
-        {{ resumen().activos }}
-      </strong>
-
-      <small>
-        Sin devolución registrada
-      </small>
-    </div>
-
-    <div class="summary-card">
-      <span>Préstamos vencidos</span>
-
-      <strong class="danger-number">
-        {{ resumen().vencidos }}
-      </strong>
-
-      <small>
-        Pendientes fuera de plazo
-      </small>
-    </div>
-
-    <div class="summary-card">
-      <span>Préstamos devueltos</span>
-
-      <strong>
-        {{ resumen().devueltos }}
-      </strong>
-
-      <small>
-        Finalizados
-      </small>
-    </div>
-  </section>
-
-  <!-- Historial -->
-
-  <section
-    class="history-panel"
+    class="history-section"
     aria-labelledby="titulo-historial"
   >
-    <div class="history-heading">
-      <div>
-        <h2 id="titulo-historial">
-          Historial de préstamos
-        </h2>
+    <div class="history-toolbar">
+      <div
+        class="filter-bar"
+        aria-label="Filtros de préstamos"
+      >
+        @for (
+          filtro of filtros;
+          track filtro.valor
+        ) {
+          <button
+            type="button"
+            class="filter-button"
+            [class.filter-button--active]="
+              filtroActual() === filtro.valor
+            "
+            [attr.aria-pressed]="
+              filtroActual() === filtro.valor
+            "
+            (click)="cambiarFiltro(filtro.valor)"
+          >
+            <span class="filter-label">
+              @switch (filtro.valor) {
+                @case ('todos') {
+                  <span aria-hidden="true">▦</span>
+                }
+                @case ('activos') {
+                  <span aria-hidden="true">▣</span>
+                }
+                @case ('vencidos') {
+                  <span aria-hidden="true">◷</span>
+                }
+                @case ('devueltos') {
+                  <span aria-hidden="true">↺</span>
+                }
+              }
 
-        <p>
-          Información actualizada desde el sistema
-          de biblioteca.
-        </p>
+              {{ filtro.etiqueta }}
+            </span>
+
+            <span class="filter-count">
+              @switch (filtro.valor) {
+                @case ('todos') {
+                  {{ resumen().total }}
+                }
+                @case ('activos') {
+                  {{ resumen().activos }}
+                }
+                @case ('vencidos') {
+                  {{ resumen().vencidos }}
+                }
+                @case ('devueltos') {
+                  {{ resumen().devueltos }}
+                }
+              }
+            </span>
+          </button>
+        }
       </div>
 
       <button
         type="button"
-        class="secondary-button"
+        class="refresh-button"
         [disabled]="cargando()"
         (click)="actualizar()"
       >
+        <span aria-hidden="true">↻</span>
         Actualizar
       </button>
     </div>
 
-    <div
-      class="filter-bar"
-      aria-label="Filtrar préstamos"
-    >
-      @for (
-        filtro of filtros;
-        track filtro.valor
-      ) {
-        <button
-          type="button"
-          class="filter-button"
-          [class.filter-button--active]="
-            filtroActual() === filtro.valor
-          "
-          [attr.aria-pressed]="
-            filtroActual() === filtro.valor
-          "
-          (click)="cambiarFiltro(filtro.valor)"
-        >
-          {{ filtro.etiqueta }}
-        </button>
-      }
-    </div>
+    <!-- ESTADOS DE LA CONSULTA -->
 
     @if (cargando()) {
-      <div
-        class="state-message"
-        role="status"
-      >
-        Consultando tus préstamos...
+      <div class="state-panel" role="status">
+        <span
+          class="loading-spinner"
+          aria-hidden="true"
+        ></span>
+
+        <p>Consultando tus préstamos...</p>
       </div>
     } @else if (error(); as mensaje) {
       <div
-        class="state-message state-message--error"
+        class="state-panel state-panel--error"
         role="alert"
       >
+        <strong>
+          No fue posible cargar los préstamos
+        </strong>
+
         <p>{{ mensaje }}</p>
 
         <button
@@ -169,12 +320,12 @@
         </button>
       </div>
     } @else if (prestamos().length === 0) {
-      <div class="state-message">
+      <div class="state-panel">
         <div class="empty-icon" aria-hidden="true">
-          ▤
+          ▣
         </div>
 
-        <h3>No hay préstamos para mostrar</h3>
+        <h2>No hay préstamos para mostrar</h2>
 
         <p>
           @if (filtroActual() === 'todos') {
@@ -182,103 +333,149 @@
             en el sistema.
           } @else {
             No tienes préstamos que coincidan
-            con este filtro.
+            con el filtro seleccionado.
           }
         </p>
       </div>
     } @else {
+
+      <!-- TARJETAS DE LIBROS -->
+
       <div class="loans-list">
         @for (
           prestamo of prestamos();
           track prestamo.prestamo_id
         ) {
-          <article class="loan-card">
+          <article
+            class="loan-card"
+            [class.loan-card--active]="
+              prestamo.estado === 'EN_PRESTAMO'
+            "
+            [class.loan-card--overdue]="
+              prestamo.estado === 'VENCIDO'
+            "
+            [class.loan-card--returned]="
+              prestamo.estado === 'DEVUELTO'
+            "
+          >
             <div class="loan-main">
-              <div
-                class="loan-book-icon"
-                aria-hidden="true"
-              >
-                ▣
-              </div>
+              <div class="loan-information">
+                <div class="loan-labels">
+                  <span
+                    class="status-chip"
+                    [class.status-chip--active]="
+                      prestamo.estado === 'EN_PRESTAMO'
+                    "
+                    [class.status-chip--overdue]="
+                      prestamo.estado === 'VENCIDO'
+                    "
+                    [class.status-chip--returned]="
+                      prestamo.estado === 'DEVUELTO'
+                    "
+                  >
+                    <span aria-hidden="true">●</span>
+                    {{ etiquetaEstado(prestamo) }}
+                  </span>
 
-              <div class="loan-description">
-                <span class="loan-label">
-                  Préstamo #{{ prestamo.prestamo_id }}
-                </span>
+                  @if (
+                    prestamo.estado === 'EN_PRESTAMO' &&
+                    prestamo.dias_restantes !== null &&
+                    prestamo.dias_restantes <= 3
+                  ) {
+                    <span class="deadline-warning">
+                      Próximo a vencer
+                    </span>
+                  }
 
-                <h3>
-                  {{ prestamo.libro.titulo }}
-                </h3>
+                  <span class="loan-reference">
+                    Préstamo #{{ prestamo.prestamo_id }}
+                  </span>
+                </div>
 
-                <p>
+                <h3>{{ prestamo.libro.titulo }}</h3>
+
+                <p class="book-isbn">
                   ISBN: {{ prestamo.libro.isbn }}
                 </p>
 
-                <p>
-                  Ejemplar:
-                  <strong>
-                    {{ prestamo.ejemplar.codigo_inventario }}
-                  </strong>
-                </p>
+                <div class="book-meta">
+                  <span>
+                    Ejemplar:
+                    <strong>
+                      {{ prestamo.ejemplar.codigo_inventario }}
+                    </strong>
+                  </span>
+                </div>
               </div>
 
-              <span
-                class="status-chip"
-                [class.status-chip--active]="
-                  prestamo.estado === 'EN_PRESTAMO'
-                "
-                [class.status-chip--overdue]="
-                  prestamo.estado === 'VENCIDO'
-                "
-                [class.status-chip--returned]="
-                  prestamo.estado === 'DEVUELTO'
-                "
-              >
-                {{ etiquetaEstado(prestamo) }}
-              </span>
-            </div>
-
-            <div class="loan-details">
-              <div>
-                <span>Fecha de préstamo</span>
-                <strong>
-                  {{ formatearFecha(prestamo.fecha_prestamo) }}
-                </strong>
-              </div>
-
-              <div>
-                <span>Fecha límite</span>
-                <strong>
-                  {{ formatearFecha(prestamo.fecha_limite) }}
-                </strong>
-              </div>
-
-              <div>
-                <span>Fecha de devolución</span>
-                <strong>
-                  {{ formatearFecha(prestamo.fecha_devolucion) }}
-                </strong>
-              </div>
-
-              <div class="loan-deadline">
-                <span>Situación actual</span>
+              <div class="loan-dates">
+                <span class="date-caption">
+                  @if (prestamo.estado === 'DEVUELTO') {
+                    Fecha de devolución
+                  } @else {
+                    Fecha límite de devolución
+                  }
+                </span>
 
                 <strong
-                  [class.deadline-overdue]="
+                  class="primary-date"
+                  [class.primary-date--overdue]="
+                    prestamo.estado === 'VENCIDO'
+                  "
+                >
+                  <span aria-hidden="true">▣</span>
+
+                  {{
+                    formatearFecha(
+                      prestamo.estado === 'DEVUELTO'
+                        ? prestamo.fecha_devolucion
+                        : prestamo.fecha_limite
+                    )
+                  }}
+                </strong>
+
+                <p class="date-detail">
+                  Préstamo:
+                  {{ formatearFecha(prestamo.fecha_prestamo) }}
+                </p>
+
+                <p
+                  class="deadline-detail"
+                  [class.deadline-detail--overdue]="
                     prestamo.estado === 'VENCIDO'
                   "
                 >
                   {{ textoPlazo(prestamo) }}
-                </strong>
+                </p>
               </div>
             </div>
+
+            @if (prestamo.estado === 'VENCIDO') {
+              <div class="loan-notice loan-notice--overdue">
+                <span aria-hidden="true">!</span>
+
+                El ejemplar continúa pendiente
+                de devolución. Acude a ventanilla
+                para regularizarlo.
+              </div>
+            } @else if (
+              prestamo.estado === 'DEVUELTO'
+            ) {
+              <div class="loan-notice loan-notice--returned">
+                <span aria-hidden="true">✓</span>
+                Devolución registrada en el sistema.
+              </div>
+            }
           </article>
         }
       </div>
 
+      <!-- PAGINACIÓN -->
+
       <footer class="pagination">
         <p>
-          Mostrando {{ primerRegistro() }}–{{ ultimoRegistro() }}
+          Mostrando
+          {{ primerRegistro() }}–{{ ultimoRegistro() }}
           de {{ total() }} préstamos
         </p>
 
@@ -286,21 +483,25 @@
           <button
             type="button"
             class="secondary-button"
-            [disabled]="pagina() === 1 || cargando()"
+            [disabled]="
+              pagina() === 1 || cargando()
+            "
             (click)="cambiarPagina(pagina() - 1)"
           >
             Anterior
           </button>
 
           <span>
-            Página {{ pagina() }} de {{ totalPaginas() }}
+            Página {{ pagina() }}
+            de {{ totalPaginas() }}
           </span>
 
           <button
             type="button"
             class="secondary-button"
             [disabled]="
-              pagina() >= totalPaginas() || cargando()
+              pagina() >= totalPaginas() ||
+              cargando()
             "
             (click)="cambiarPagina(pagina() + 1)"
           >
@@ -312,7 +513,8 @@
   </section>
 
   <p class="page-note">
-    Para realizar una devolución, acude al personal
-    de biblioteca. Esta sección es únicamente de consulta.
+    Esta sección es de consulta. Las devoluciones,
+    multas y aclaraciones se gestionan con
+    el personal de biblioteca.
   </p>
 </section>

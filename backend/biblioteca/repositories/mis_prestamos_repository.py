@@ -1,31 +1,50 @@
 from abc import ABC, abstractmethod
 from datetime import date
+from decimal import Decimal
 
 from django.db.models import Count, Q
 
-from biblioteca.models import Prestamo
+from biblioteca.models import Prestamo, Sancion
 
 
 class IMisPrestamosRepository(ABC):
     """
-    Contrato de lectura de préstamos personales.
+    Contrato de lectura de los préstamos personales
+    y de las restricciones registradas del lector.
     """
 
     @abstractmethod
-    def listar(self, usuario_id, filtro, hoy):
+    def listar(
+        self,
+        usuario_id: int,
+        filtro: str,
+        hoy: date
+    ):
         pass
 
     @abstractmethod
-    def obtener_resumen(self, usuario_id, hoy):
+    def obtener_resumen(
+        self,
+        usuario_id: int,
+        hoy: date
+    ):
+        pass
+
+    @abstractmethod
+    def consultar_restricciones(
+        self,
+        usuario_id: int,
+        hoy: date
+    ) -> dict:
         pass
 
 
 class DjangoMisPrestamosRepository(IMisPrestamosRepository):
     """
-    Consultas de préstamos mediante Django ORM.
+    Implementación de consultas mediante Django ORM.
 
-    Todas las consultas se restringen al usuario
-    autenticado recibido desde el servicio.
+    Todas las operaciones están restringidas al
+    identificador del usuario autenticado.
     """
 
     def listar(
@@ -68,12 +87,10 @@ class DjangoMisPrestamosRepository(IMisPrestamosRepository):
         self,
         usuario_id: int,
         hoy: date
-    ):
+    ) -> dict:
         """
-        Activos incluye todos los préstamos sin
-        devolución, incluso los vencidos.
-
-        Vencidos es un subconjunto de activos.
+        Un préstamo vencido continúa activo mientras
+        fecha_devolucion permanezca vacía.
         """
 
         return (
@@ -105,3 +122,42 @@ class DjangoMisPrestamosRepository(IMisPrestamosRepository):
                 )
             )
         )
+
+    def consultar_restricciones(
+        self,
+        usuario_id: int,
+        hoy: date
+    ) -> dict:
+        """
+        Consulta sanciones que ya se encuentran
+        registradas en la base de datos.
+
+        No calcula multas ni genera bloqueos:
+        esas operaciones corresponden a otros
+        módulos del sistema.
+        """
+
+        adeudos_pendientes = (
+            Sancion.objects
+            .filter(
+                prestamo__usuario_id=usuario_id,
+                monto__gt=Decimal('0.00'),
+                fecha_pago__isnull=True
+            )
+            .exists()
+        )
+
+        bloqueo_vigente = (
+            Sancion.objects
+            .filter(
+                prestamo__usuario_id=usuario_id,
+                fecha_inicio_bloqueo__lte=hoy,
+                fecha_fin_bloqueo__gte=hoy
+            )
+            .exists()
+        )
+
+        return {
+            'adeudos_pendientes': adeudos_pendientes,
+            'bloqueo_vigente': bloqueo_vigente,
+        }
