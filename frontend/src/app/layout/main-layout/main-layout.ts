@@ -79,6 +79,7 @@ export class MainLayoutComponent implements OnInit {
     },
     {
       label: 'Gestión de libros',
+      route: '/libros',
       roles: ['bibliotecario'],
       icon: 'admin-books',
     },

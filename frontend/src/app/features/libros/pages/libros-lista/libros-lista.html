@@ -1,0 +1,256 @@
+<section class="libros-page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Administración de biblioteca • Acervo bibliográfico</p>
+      <h1>Gestión de libros y títulos</h1>
+      <p class="description">
+        Registro central de títulos bibliográficos y control de ejemplares físicos.
+      </p>
+    </div>
+
+    <div class="header-actions">
+      <span class="role-label">Bibliotecario</span>
+
+      <button
+        type="button"
+        class="primary-button primary-button--disabled"
+        disabled
+        title="Formulario de registro disponible en Etapa 3"
+        aria-disabled="true"
+      >
+        + Nuevo libro
+      </button>
+    </div>
+  </header>
+
+  <div class="summary-card">
+    <span>Total de títulos registrados</span>
+    <strong>{{ total() }}</strong>
+  </div>
+
+  <section class="table-card" aria-label="Gestión de libros y títulos">
+    <div class="filters-container">
+      <div class="search-inputs-group">
+        <div class="input-wrapper search-title-wrapper">
+          <svg
+            class="input-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input
+            id="filtro-titulo"
+            type="text"
+            placeholder="Buscar por título..."
+            [ngModel]="busquedaTitulo()"
+            (ngModelChange)="actualizarBusquedaTitulo($event)"
+            class="filter-input"
+            aria-label="Buscar libros por título"
+          />
+        </div>
+
+        <div class="input-wrapper search-isbn-wrapper">
+          <svg
+            class="input-icon"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            aria-hidden="true"
+          >
+            <rect x="3" y="4" width="18" height="16" rx="2"></rect>
+            <line x1="7" y1="8" x2="7" y2="16"></line>
+            <line x1="11" y1="8" x2="11" y2="16"></line>
+            <line x1="15" y1="8" x2="15" y2="12"></line>
+            <line x1="17" y1="8" x2="17" y2="16"></line>
+          </svg>
+          <input
+            id="filtro-isbn"
+            type="text"
+            placeholder="Buscar por ISBN..."
+            [ngModel]="busquedaIsbn()"
+            (ngModelChange)="actualizarBusquedaIsbn($event)"
+            class="filter-input"
+            aria-label="Buscar libros por ISBN"
+          />
+        </div>
+      </div>
+
+      <div class="filters-selects-group">
+        <select
+          id="filtro-categoria"
+          [ngModel]="categoriaSeleccionada()"
+          (ngModelChange)="cambiarCategoria($event)"
+          class="filter-select"
+          aria-label="Filtrar por categoría"
+        >
+          <option [ngValue]="null">Todas las categorías</option>
+          @for (cat of categoriasOpciones(); track cat.categoria_id) {
+            <option [ngValue]="cat.categoria_id">{{ cat.nombre_categoria }}</option>
+          }
+        </select>
+
+        <select
+          id="filtro-autor"
+          [ngModel]="autorSeleccionado()"
+          (ngModelChange)="cambiarAutor($event)"
+          class="filter-select"
+          aria-label="Filtrar por autor"
+        >
+          <option [ngValue]="null">Todos los autores</option>
+          @for (aut of autoresOpciones(); track aut.autor_id) {
+            <option [ngValue]="aut.autor_id">{{ aut.nombre }}</option>
+          }
+        </select>
+
+        @if (hayFiltrosActivos()) {
+          <button
+            type="button"
+            class="secondary-button btn-limpiar"
+            (click)="limpiarFiltros()"
+          >
+            Limpiar filtros
+          </button>
+        }
+      </div>
+    </div>
+
+    @if (cargando()) {
+      <div class="state-message" role="status">
+        <p>Cargando libros del catálogo...</p>
+      </div>
+    } @else if (error()) {
+      <div class="state-message state-message--error" role="alert">
+        <p>{{ error() }}</p>
+        <button
+          type="button"
+          class="secondary-button"
+          (click)="cargarLibros()"
+        >
+          Reintentar
+        </button>
+      </div>
+    } @else if (libros().length === 0) {
+      <div class="state-message">
+        <p>
+          @if (hayFiltrosActivos()) {
+            No se encontraron libros con los filtros seleccionados.
+          } @else {
+            Aún no hay libros registrados en el sistema.
+          }
+        </p>
+      </div>
+    } @else {
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">Título y autor</th>
+              <th scope="col">ISBN</th>
+              <th scope="col">Categorías</th>
+              <th scope="col">Fecha publicación</th>
+              <th scope="col" class="th-actions">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (libro of libros(); track libro.libro_id) {
+              <tr>
+                <td>
+                  <div class="book-info">
+                    <span class="book-title">{{ libro.titulo }}</span>
+                    <span class="book-authors">{{ formatearAutores(libro.autores) }}</span>
+                  </div>
+                </td>
+                <td>
+                  <span class="isbn-badge">{{ libro.isbn }}</span>
+                </td>
+                <td>
+                  <div class="categories-list">
+                    @if (libro.categorias.length > 0) {
+                      @for (cat of libro.categorias; track cat.categoria_id) {
+                        <span class="category-chip">{{ cat.nombre_categoria }}</span>
+                      }
+                    } @else {
+                      <span class="empty-badge">Sin categoría</span>
+                    }
+                  </div>
+                </td>
+                <td>
+                  <span class="date-text">{{ formatearFecha(libro.fecha_publicacion) }}</span>
+                </td>
+                <td class="td-actions">
+                  <div class="action-buttons-group">
+                    <button
+                      type="button"
+                      class="table-action-btn"
+                      disabled
+                      title="Detalle del libro disponible en Etapa 4"
+                      aria-label="Ver detalle de {{ libro.titulo }}"
+                    >
+                      Ver
+                    </button>
+                    <button
+                      type="button"
+                      class="table-action-btn"
+                      disabled
+                      title="Edición del libro disponible en Etapa 3"
+                      aria-label="Editar {{ libro.titulo }}"
+                    >
+                      Editar
+                    </button>
+                    <button
+                      type="button"
+                      class="table-action-btn table-action-btn--secondary"
+                      disabled
+                      title="Gestión de ejemplares disponible en Etapa 4"
+                      aria-label="Gestionar ejemplares de {{ libro.titulo }}"
+                    >
+                      Ejemplares
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <footer class="pagination">
+        <p>
+          Mostrando {{ primerRegistro() }}-{{ ultimoRegistro() }} de {{ total() }} títulos
+        </p>
+
+        <div class="pagination-controls">
+          <button
+            type="button"
+            class="secondary-button"
+            [disabled]="pagina() <= 1 || cargando()"
+            (click)="cambiarPagina(pagina() - 1)"
+            aria-label="Página anterior"
+          >
+            &lt; Anterior
+          </button>
+
+          <span class="page-indicator">
+            Página {{ pagina() }} de {{ totalPaginas() }}
+          </span>
+
+          <button
+            type="button"
+            class="secondary-button"
+            [disabled]="pagina() >= totalPaginas() || cargando()"
+            (click)="cambiarPagina(pagina() + 1)"
+            aria-label="Página siguiente"
+          >
+            Siguiente &gt;
+          </button>
+        </div>
+      </footer>
+    }
+  </section>
+</section>

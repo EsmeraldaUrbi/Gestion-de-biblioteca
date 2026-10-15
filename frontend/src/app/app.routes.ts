@@ -114,6 +114,15 @@ export const routes: Routes = [
             (module) => module.UsuariosListaComponent,
           ),
       },
+      {
+        path: 'libros',
+        canActivate: [roleGuard],
+        data: { roles: ['bibliotecario'] },
+        loadComponent: () =>
+          import('./features/libros/pages/libros-lista/libros-lista').then(
+            (module) => module.LibrosListaComponent,
+          ),
+      },
     ],
   },
   {
