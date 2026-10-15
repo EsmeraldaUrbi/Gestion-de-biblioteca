@@ -1,6 +1,7 @@
 import {
   CommonModule,
 } from '@angular/common';
+
 import {
   Component,
   computed,
@@ -8,24 +9,36 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
+
 import {
   Router,
   RouterLink,
   RouterOutlet,
 } from '@angular/router';
-import { finalize } from 'rxjs';
+
+import {
+  finalize,
+} from 'rxjs';
 
 import {
   UserRole,
 } from '../../core/auth/models/auth.models';
-import { AuthService } from '../../core/auth/services/auth.service';
-import { AuthSessionService } from '../../core/auth/services/auth-session.service';
+
+import {
+  AuthService,
+} from '../../core/auth/services/auth.service';
+
+import {
+  AuthSessionService,
+} from '../../core/auth/services/auth-session.service';
+
 
 interface NavigationItem {
   label: string;
   route?: string;
   roles: UserRole[];
 }
+
 
 @Component({
   selector: 'app-main-layout',
@@ -38,108 +51,94 @@ interface NavigationItem {
   templateUrl: './main-layout.html',
   styleUrl: './main-layout.css',
 })
-export class MainLayoutComponent
-  implements OnInit
-{
-  private readonly auth =
-    inject(AuthService);
+export class MainLayoutComponent implements OnInit {
+  private readonly auth = inject(AuthService);
 
-  private readonly router =
-    inject(Router);
+  private readonly router = inject(Router);
 
-  readonly session =
-    inject(AuthSessionService);
+  readonly session = inject(AuthSessionService);
 
-  readonly loggingOut =
-    signal(false);
+  readonly loggingOut = signal(false);
 
-  private readonly navigation:
-    NavigationItem[] = [
-      {
-        label: 'Inicio',
-        route: '/inicio',
-        roles: [
-          'estudiante',
-          'docente',
-          'bibliotecario',
-        ],
-      },
-      {
-        label: 'Catálogo',
-        roles: [
-          'estudiante',
-          'docente',
-          'bibliotecario',
-        ],
-      },
-      {
-        label: 'Mis préstamos',
-        roles: [
-          'estudiante',
-          'docente',
-        ],
-      },
-      {
-        label: 'Gestión de libros',
-        roles: [
-          'bibliotecario',
-        ],
-      },
-      {
-        label: 'Usuarios',
-        route: '/usuarios',
-        roles: [
-          'bibliotecario',
-        ],
-      },
-      {
-        label: 'Préstamos',
-        roles: [
-          'bibliotecario',
-        ],
-      },
-      {
-        label: 'Devoluciones',
-        roles: [
-          'bibliotecario',
-        ],
-      },
-    ];
+  private readonly navigation: NavigationItem[] = [
+    {
+      label: 'Inicio',
+      route: '/inicio',
+      roles: [
+        'estudiante',
+        'docente',
+        'bibliotecario',
+      ],
+    },
+    {
+      label: 'Catálogo',
+      roles: [
+        'estudiante',
+        'docente',
+        'bibliotecario',
+      ],
+    },
+    {
+      label: 'Mis préstamos',
+      roles: [
+        'estudiante',
+        'docente',
+      ],
+    },
+    {
+      label: 'Gestión de libros',
+      roles: [
+        'bibliotecario',
+      ],
+    },
+    {
+      label: 'Usuarios',
+      route: '/usuarios',
+      roles: [
+        'bibliotecario',
+      ],
+    },
+    {
+      label: 'Préstamos',
+      route: '/prestamos',
+      roles: [
+        'bibliotecario',
+      ],
+    },
+    {
+      label: 'Devoluciones',
+      roles: [
+        'bibliotecario',
+      ],
+    },
+  ];
 
-  readonly visibleNavigation =
-    computed(() => {
-      const role = this.session.rol();
+  readonly visibleNavigation = computed(() => {
+    const role = this.session.rol();
 
-      if (!role) {
-        return [];
-      }
+    if (!role) {
+      return [];
+    }
 
-      return this.navigation.filter(
-        (item) =>
-          item.roles.includes(role),
-      );
-    });
+    return this.navigation.filter(
+      (item) => item.roles.includes(role),
+    );
+  });
 
-  readonly roleLabel =
-    computed(() => {
-      const role = this.session.rol();
+  readonly roleLabel = computed(() => {
+    const role = this.session.rol();
 
-      const labels:
-        Record<UserRole, string> = {
-          estudiante: 'Estudiante',
-          docente: 'Docente',
-          bibliotecario: 'Bibliotecario',
-        };
+    const labels: Record<UserRole, string> = {
+      estudiante: 'Estudiante',
+      docente: 'Docente',
+      bibliotecario: 'Bibliotecario',
+    };
 
-      return role
-        ? labels[role]
-        : '';
-    });
+    return role ? labels[role] : '';
+  });
 
   ngOnInit(): void {
-    this.auth
-      .restoreSession()
-      .subscribe();
+    this.auth.restoreSession().subscribe();
   }
 
   logout(): void {
@@ -162,8 +161,8 @@ export class MainLayoutComponent
       )
       .subscribe({
         error: () => {
-          // AuthService limpia la sesión
-          // local incluso si falla la petición.
+          // AuthService limpia la sesión local
+          // aunque falle la petición de cierre.
         },
       });
   }

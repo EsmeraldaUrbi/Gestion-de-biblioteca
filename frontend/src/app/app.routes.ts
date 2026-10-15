@@ -2,11 +2,18 @@ import {
   Routes,
 } from '@angular/router';
 
-import { authGuard } from './core/auth/guards/auth.guard';
-import { guestGuard } from './core/auth/guards/guest.guard';
+import {
+  authGuard,
+} from './core/auth/guards/auth.guard';
 
-//3.2
-import { roleGuard } from './core/auth/guards/role.guard';
+import {
+  guestGuard,
+} from './core/auth/guards/guest.guard';
+
+import {
+  roleGuard,
+} from './core/auth/guards/role.guard';
+
 
 export const routes: Routes = [
   {
@@ -18,8 +25,7 @@ export const routes: Routes = [
       import(
         './features/auth/login/login'
       ).then(
-        (module) =>
-          module.LoginComponent,
+        (module) => module.LoginComponent,
       ),
   },
   {
@@ -31,18 +37,19 @@ export const routes: Routes = [
       import(
         './layout/main-layout/main-layout'
       ).then(
-        (module) =>
-          module.MainLayoutComponent,
+        (module) => module.MainLayoutComponent,
       ),
     children: [
+      // ---------------------------------------
+      // Navegación general
+      // ---------------------------------------
       {
         path: 'inicio',
         loadComponent: () =>
           import(
             './features/inicio/inicio'
           ).then(
-            (module) =>
-              module.InicioComponent,
+            (module) => module.InicioComponent,
           ),
       },
       {
@@ -51,8 +58,7 @@ export const routes: Routes = [
           import(
             './features/acceso-denegado/acceso-denegado'
           ).then(
-            (module) =>
-              module.AccesoDenegadoComponent,
+            (module) => module.AccesoDenegadoComponent,
           ),
       },
       {
@@ -60,6 +66,29 @@ export const routes: Routes = [
         pathMatch: 'full',
         redirectTo: 'inicio',
       },
+
+      // ---------------------------------------
+      // 3.5 Registro de préstamos
+      // ---------------------------------------
+      {
+        path: 'prestamos',
+        canActivate: [
+          roleGuard,
+        ],
+        data: {
+          roles: ['bibliotecario'],
+        },
+        loadComponent: () =>
+          import(
+            './features/prestamos/pages/registro-prestamo/registro-prestamo'
+          ).then(
+            (module) => module.RegistroPrestamoComponent,
+          ),
+      },
+
+      // ---------------------------------------
+      // 3.2 Gestión de usuarios
+      // ---------------------------------------
       {
         path: 'usuarios/nuevo',
         canActivate: [
