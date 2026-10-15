@@ -47,6 +47,11 @@ from biblioteca.presentation.prestamos_views import (
     PrestamosRegistroView,
 )
 
+# 3.5 Consulta personal de préstamos.
+from biblioteca.presentation.mis_prestamos_views import (
+    MisPrestamosView,
+)
+
 
 urlpatterns = [
     # -----------------------------------------
@@ -166,7 +171,7 @@ urlpatterns = [
     ),
 
     # -----------------------------------------
-    # 3.5 Registro de préstamos
+    # 3.5 Préstamos de ventanilla
     # -----------------------------------------
 
     path(
@@ -185,5 +190,15 @@ urlpatterns = [
         'prestamos/',
         PrestamosRegistroView.as_view(),
         name='prestamos-registro'
+    ),
+
+    # -----------------------------------------
+    # 3.5 Consulta personal
+    # -----------------------------------------
+
+    path(
+        'prestamos/mios/',
+        MisPrestamosView.as_view(),
+        name='prestamos-mios'
     ),
 ]
