@@ -80,6 +80,7 @@ export class MainLayoutComponent implements OnInit {
     },
     {
       label: 'Mis préstamos',
+      route: '/mis-prestamos',
       roles: [
         'estudiante',
         'docente',
@@ -161,8 +162,8 @@ export class MainLayoutComponent implements OnInit {
       )
       .subscribe({
         error: () => {
-          // AuthService limpia la sesión local
-          // aunque falle la petición de cierre.
+          // La sesión local se limpia
+          // aunque falle la petición al servidor.
         },
       });
   }

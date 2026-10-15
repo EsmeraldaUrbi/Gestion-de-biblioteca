@@ -1,0 +1,318 @@
+<section class="mis-prestamos-page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">
+        Biblioteca / Área personal
+      </p>
+
+      <h1>Mis préstamos</h1>
+
+      <p class="description">
+        Consulta los libros que tienes prestados,
+        sus fechas de devolución y tu historial.
+      </p>
+    </div>
+
+    <span class="role-label">
+      {{ rolUsuario() }}
+    </span>
+  </header>
+
+  <section
+    class="welcome-card"
+    aria-label="Información del lector"
+  >
+    <div class="welcome-icon" aria-hidden="true">
+      B
+    </div>
+
+    <div>
+      <span>Cuenta institucional</span>
+
+      <h2>
+        {{ session.usuario()?.nombre }}
+      </h2>
+
+      <p>
+        {{ session.usuario()?.email }}
+      </p>
+    </div>
+  </section>
+
+  <!-- Resumen personal -->
+
+  <section
+    class="summary-grid"
+    aria-label="Resumen de préstamos"
+  >
+    <div class="summary-card">
+      <span>Total de préstamos</span>
+
+      <strong>
+        {{ resumen().total }}
+      </strong>
+
+      <small>
+        Historial registrado
+      </small>
+    </div>
+
+    <div class="summary-card">
+      <span>Préstamos activos</span>
+
+      <strong>
+        {{ resumen().activos }}
+      </strong>
+
+      <small>
+        Sin devolución registrada
+      </small>
+    </div>
+
+    <div class="summary-card">
+      <span>Préstamos vencidos</span>
+
+      <strong class="danger-number">
+        {{ resumen().vencidos }}
+      </strong>
+
+      <small>
+        Pendientes fuera de plazo
+      </small>
+    </div>
+
+    <div class="summary-card">
+      <span>Préstamos devueltos</span>
+
+      <strong>
+        {{ resumen().devueltos }}
+      </strong>
+
+      <small>
+        Finalizados
+      </small>
+    </div>
+  </section>
+
+  <!-- Historial -->
+
+  <section
+    class="history-panel"
+    aria-labelledby="titulo-historial"
+  >
+    <div class="history-heading">
+      <div>
+        <h2 id="titulo-historial">
+          Historial de préstamos
+        </h2>
+
+        <p>
+          Información actualizada desde el sistema
+          de biblioteca.
+        </p>
+      </div>
+
+      <button
+        type="button"
+        class="secondary-button"
+        [disabled]="cargando()"
+        (click)="actualizar()"
+      >
+        Actualizar
+      </button>
+    </div>
+
+    <div
+      class="filter-bar"
+      aria-label="Filtrar préstamos"
+    >
+      @for (
+        filtro of filtros;
+        track filtro.valor
+      ) {
+        <button
+          type="button"
+          class="filter-button"
+          [class.filter-button--active]="
+            filtroActual() === filtro.valor
+          "
+          [attr.aria-pressed]="
+            filtroActual() === filtro.valor
+          "
+          (click)="cambiarFiltro(filtro.valor)"
+        >
+          {{ filtro.etiqueta }}
+        </button>
+      }
+    </div>
+
+    @if (cargando()) {
+      <div
+        class="state-message"
+        role="status"
+      >
+        Consultando tus préstamos...
+      </div>
+    } @else if (error(); as mensaje) {
+      <div
+        class="state-message state-message--error"
+        role="alert"
+      >
+        <p>{{ mensaje }}</p>
+
+        <button
+          type="button"
+          class="secondary-button"
+          (click)="actualizar()"
+        >
+          Reintentar
+        </button>
+      </div>
+    } @else if (prestamos().length === 0) {
+      <div class="state-message">
+        <div class="empty-icon" aria-hidden="true">
+          ▤
+        </div>
+
+        <h3>No hay préstamos para mostrar</h3>
+
+        <p>
+          @if (filtroActual() === 'todos') {
+            Aún no tienes préstamos registrados
+            en el sistema.
+          } @else {
+            No tienes préstamos que coincidan
+            con este filtro.
+          }
+        </p>
+      </div>
+    } @else {
+      <div class="loans-list">
+        @for (
+          prestamo of prestamos();
+          track prestamo.prestamo_id
+        ) {
+          <article class="loan-card">
+            <div class="loan-main">
+              <div
+                class="loan-book-icon"
+                aria-hidden="true"
+              >
+                ▣
+              </div>
+
+              <div class="loan-description">
+                <span class="loan-label">
+                  Préstamo #{{ prestamo.prestamo_id }}
+                </span>
+
+                <h3>
+                  {{ prestamo.libro.titulo }}
+                </h3>
+
+                <p>
+                  ISBN: {{ prestamo.libro.isbn }}
+                </p>
+
+                <p>
+                  Ejemplar:
+                  <strong>
+                    {{ prestamo.ejemplar.codigo_inventario }}
+                  </strong>
+                </p>
+              </div>
+
+              <span
+                class="status-chip"
+                [class.status-chip--active]="
+                  prestamo.estado === 'EN_PRESTAMO'
+                "
+                [class.status-chip--overdue]="
+                  prestamo.estado === 'VENCIDO'
+                "
+                [class.status-chip--returned]="
+                  prestamo.estado === 'DEVUELTO'
+                "
+              >
+                {{ etiquetaEstado(prestamo) }}
+              </span>
+            </div>
+
+            <div class="loan-details">
+              <div>
+                <span>Fecha de préstamo</span>
+                <strong>
+                  {{ formatearFecha(prestamo.fecha_prestamo) }}
+                </strong>
+              </div>
+
+              <div>
+                <span>Fecha límite</span>
+                <strong>
+                  {{ formatearFecha(prestamo.fecha_limite) }}
+                </strong>
+              </div>
+
+              <div>
+                <span>Fecha de devolución</span>
+                <strong>
+                  {{ formatearFecha(prestamo.fecha_devolucion) }}
+                </strong>
+              </div>
+
+              <div class="loan-deadline">
+                <span>Situación actual</span>
+
+                <strong
+                  [class.deadline-overdue]="
+                    prestamo.estado === 'VENCIDO'
+                  "
+                >
+                  {{ textoPlazo(prestamo) }}
+                </strong>
+              </div>
+            </div>
+          </article>
+        }
+      </div>
+
+      <footer class="pagination">
+        <p>
+          Mostrando {{ primerRegistro() }}–{{ ultimoRegistro() }}
+          de {{ total() }} préstamos
+        </p>
+
+        <div class="pagination-controls">
+          <button
+            type="button"
+            class="secondary-button"
+            [disabled]="pagina() === 1 || cargando()"
+            (click)="cambiarPagina(pagina() - 1)"
+          >
+            Anterior
+          </button>
+
+          <span>
+            Página {{ pagina() }} de {{ totalPaginas() }}
+          </span>
+
+          <button
+            type="button"
+            class="secondary-button"
+            [disabled]="
+              pagina() >= totalPaginas() || cargando()
+            "
+            (click)="cambiarPagina(pagina() + 1)"
+          >
+            Siguiente
+          </button>
+        </div>
+      </footer>
+    }
+  </section>
+
+  <p class="page-note">
+    Para realizar una devolución, acude al personal
+    de biblioteca. Esta sección es únicamente de consulta.
+  </p>
+</section>

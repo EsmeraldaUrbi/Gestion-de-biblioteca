@@ -40,9 +40,6 @@ export const routes: Routes = [
         (module) => module.MainLayoutComponent,
       ),
     children: [
-      // ---------------------------------------
-      // Navegación general
-      // ---------------------------------------
       {
         path: 'inicio',
         loadComponent: () =>
@@ -68,7 +65,29 @@ export const routes: Routes = [
       },
 
       // ---------------------------------------
-      // 3.5 Registro de préstamos
+      // 3.5 Consulta personal: estudiante/docente
+      // ---------------------------------------
+      {
+        path: 'mis-prestamos',
+        canActivate: [
+          roleGuard,
+        ],
+        data: {
+          roles: [
+            'estudiante',
+            'docente',
+          ],
+        },
+        loadComponent: () =>
+          import(
+            './features/prestamos/pages/mis-prestamos/mis-prestamos'
+          ).then(
+            (module) => module.MisPrestamosComponent,
+          ),
+      },
+
+      // ---------------------------------------
+      // 3.5 Registro: bibliotecario
       // ---------------------------------------
       {
         path: 'prestamos',

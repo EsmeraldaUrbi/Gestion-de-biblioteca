@@ -1,0 +1,467 @@
+:host {
+  display: block;
+  min-width: 0;
+}
+
+.mis-prestamos-page {
+  display: grid;
+  gap: 24px;
+  padding-bottom: 30px;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: #0765d8;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.page-header h1 {
+  margin: 0 0 10px;
+  color: #142238;
+  font-size: clamp(27px, 4vw, 35px);
+  letter-spacing: -0.03em;
+}
+
+.description {
+  margin: 0;
+  color: #647084;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.role-label {
+  flex: 0 0 auto;
+  padding: 9px 15px;
+  border: 1px solid #d5e5ff;
+  border-radius: 25px;
+  background: #eaf2ff;
+  color: #1259ab;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.welcome-card,
+.summary-card,
+.history-panel {
+  border: 1px solid #e3e8f1;
+  border-radius: 13px;
+  background: #ffffff;
+  box-shadow: 0 4px 18px rgb(20 35 60 / 4%);
+}
+
+.welcome-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 22px 24px;
+}
+
+.welcome-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 54px;
+  height: 54px;
+  border-radius: 12px;
+  background: #102b50;
+  color: #ffffff;
+  font-size: 26px;
+  font-weight: 800;
+}
+
+.welcome-card span {
+  color: #647084;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.welcome-card h2 {
+  margin: 5px 0;
+  color: #142238;
+  font-size: 18px;
+}
+
+.welcome-card p {
+  margin: 0;
+  color: #718097;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 15px;
+}
+
+.summary-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+  padding: 21px;
+}
+
+.summary-card > span {
+  color: #637187;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.summary-card strong {
+  color: #142238;
+  font-size: 32px;
+  font-weight: 750;
+}
+
+.summary-card .danger-number {
+  color: #bd4545;
+}
+
+.summary-card small {
+  color: #8792a4;
+  font-size: 11px;
+}
+
+.history-panel {
+  overflow: hidden;
+}
+
+.history-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 23px 24px;
+}
+
+.history-heading h2 {
+  margin: 0 0 6px;
+  color: #142238;
+  font-size: 19px;
+}
+
+.history-heading p {
+  margin: 0;
+  color: #778397;
+  font-size: 12px;
+}
+
+.secondary-button {
+  flex: 0 0 auto;
+  min-height: 38px;
+  padding: 9px 14px;
+  border: 1px solid #d4deea;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #28415f;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.secondary-button:hover:not(:disabled) {
+  background: #f0f5fc;
+  border-color: #b9cde6;
+}
+
+.secondary-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 0 24px 20px;
+  border-bottom: 1px solid #edf0f5;
+}
+
+.filter-button {
+  padding: 9px 15px;
+  border: 1px solid #dce3ee;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #5e6e85;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.filter-button:hover {
+  background: #eef4fd;
+}
+
+.filter-button--active {
+  border-color: #0c66ce;
+  background: #eaf3ff;
+  color: #0c5cbd;
+}
+
+.loans-list {
+  display: grid;
+  gap: 14px;
+  padding: 20px 24px;
+}
+
+.loan-card {
+  overflow: hidden;
+  border: 1px solid #e4eaf2;
+  border-radius: 11px;
+  background: #ffffff;
+}
+
+.loan-card:hover {
+  border-color: #c7d8ed;
+}
+
+.loan-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 15px;
+  padding: 18px;
+}
+
+.loan-book-icon {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 49px;
+  height: 58px;
+  border-radius: 8px;
+  background: #eaf2ff;
+  color: #155bb0;
+  font-size: 27px;
+}
+
+.loan-description {
+  flex: 1;
+  min-width: 0;
+}
+
+.loan-label {
+  color: #1260be;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.loan-description h3 {
+  margin: 6px 0 9px;
+  color: #1a2c45;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.loan-description p {
+  margin: 5px 0 0;
+  color: #758297;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.loan-description p strong {
+  color: #33455c;
+  font-weight: 700;
+}
+
+.status-chip {
+  flex: 0 0 auto;
+  padding: 7px 11px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.status-chip--active {
+  background: #e9f5ed;
+  color: #26774a;
+}
+
+.status-chip--overdue {
+  background: #fff0ed;
+  color: #b64c3f;
+}
+
+.status-chip--returned {
+  background: #eef2f8;
+  color: #62718b;
+}
+
+.loan-details {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 15px;
+  padding: 15px 18px;
+  border-top: 1px solid #edf0f5;
+  background: #f8fafc;
+}
+
+.loan-details > div {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.loan-details span {
+  color: #8490a3;
+  font-size: 11px;
+}
+
+.loan-details strong {
+  color: #30435e;
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.loan-details .deadline-overdue {
+  color: #b64c3f;
+}
+
+.state-message {
+  padding: 45px 24px;
+  color: #718097;
+  font-size: 13px;
+  text-align: center;
+}
+
+.state-message h3 {
+  margin: 12px 0 8px;
+  color: #263952;
+  font-size: 17px;
+}
+
+.state-message p {
+  margin: 0 0 15px;
+  line-height: 1.6;
+}
+
+.state-message--error {
+  color: #ac3535;
+}
+
+.empty-icon {
+  margin: 0 auto;
+  color: #a6b7ce;
+  font-size: 35px;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+  padding: 19px 24px;
+  border-top: 1px solid #edf0f5;
+}
+
+.pagination > p {
+  margin: 0;
+  color: #758297;
+  font-size: 12px;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+}
+
+.pagination-controls span {
+  color: #5e6e82;
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.page-note {
+  margin: 0;
+  color: #8591a2;
+  font-size: 12px;
+  text-align: center;
+  line-height: 1.7;
+}
+
+@media (max-width: 950px) {
+  .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .loan-details {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 650px) {
+  .page-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .welcome-card {
+    padding: 18px;
+  }
+
+  .history-heading {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .history-heading,
+  .filter-bar,
+  .loans-list {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .loan-main {
+    flex-wrap: wrap;
+  }
+
+  .loan-description {
+    flex-basis: calc(100% - 70px);
+  }
+
+  .status-chip {
+    margin-left: 64px;
+  }
+
+  .pagination {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 17px 16px;
+  }
+}
+
+@media (max-width: 400px) {
+  .summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .loan-details {
+    grid-template-columns: 1fr;
+  }
+
+  .pagination-controls {
+    flex-wrap: wrap;
+  }
+}
