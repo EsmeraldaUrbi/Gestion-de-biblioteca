@@ -46,3 +46,17 @@ página inexistente. Las operaciones de escritura no están disponibles.
 No requiere migraciones nuevas del catálogo. Antes de probar, aplicar las
 migraciones de dev, incluida 0004_tokenacceso. Las pruebas están en
 `biblioteca.tests.test_catalogo` y crean sus propios datos en una base de pruebas.
+
+## Cobertura e integración (issue 3.4.3)
+
+La integración y cálculo de disponibilidad fue validada mediante:
+- Suite de pruebas en `backend/biblioteca/tests/test_catalogo.py` cubriendo:
+  - Filtros individuales y combinados (título, autor, categoría, disponibilidad).
+  - Verificación de que múltiples relaciones (autores y categorías) no duplican filas ni alteran stock.
+  - Exclusión de copias en `MANTENIMIENTO` y `BAJA` de `stock_disponible`, e inclusión de `MANTENIMIENTO` en `stock_total`.
+  - Préstamos activos (incluso vencidos) mantienen la copia como no disponible; las devoluciones restauran disponibilidad inmediatamente.
+  - El historial acumulado de préstamos devueltos no multiplica las existencias.
+- Pruebas de contrato y códigos HTTP en Postman (`Biblioteca_Catalogo.postman_collection.json`).
+
+> **Nota:** La validación visual de la interfaz de usuario queda pendiente de la autorización explícita para la implementación del frontend (issue 3.4.1).
+

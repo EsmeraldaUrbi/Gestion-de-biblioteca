@@ -4,7 +4,7 @@ from django.urls import reverse
 from rest_framework.test import APITestCase
 
 from biblioteca.models import (
-    Autor, Categoria, CategoriaLibro, Ejemplar, Libro, LibroAutor,
+    Autor, Categoria, Ejemplar, Libro,
     Prestamo, Rol, Usuario,
 )
 
@@ -70,9 +70,11 @@ class CatalogoApiTests(APITestCase):
                 self.assertEqual(len(libro['autores']), 2)
                 self.assertEqual(len(libro['categorias']), 2)
 
-    def test_relaciones_duplicadas_no_duplican_libros_ni_stock(self):
-        LibroAutor.objects.create(libro=self.libro, autor=self.autores[0])
-        CategoriaLibro.objects.create(libro=self.libro, categoria=self.categorias[0])
+    def test_filtros_combinados_con_varias_relaciones_no_duplican_libros_ni_stock(self):
+        # El setUp ya vincula dos autores y dos categorías al libro.
+        # Filtrar por autor[0] y categoría[0] produce un join N:M; distinct() y
+        # las subconsultas del repositorio deben devolver exactamente un libro
+        # con el stock correcto, sin duplicar filas ni existencias.
         respuesta = self.client.get(self.url, {
             'autor': self.autores[0].pk, 'categoria': self.categorias[0].pk,
         })
@@ -92,6 +94,63 @@ class CatalogoApiTests(APITestCase):
         Prestamo.objects.filter(ejemplar=self.ocupado).update(fecha_devolucion=date.today())
         respuesta = self.client.get(reverse('catalogo-detail', args=[self.libro.pk]))
         self.assertEqual(respuesta.data['stock_disponible'], 2)
+
+    def test_estados_ejemplar_y_prestamos_cobertura_disponibilidad(self):
+        """
+        RN-03, RN-05 y RN-06:
+        - Mantenimiento: suma a stock_total, no a stock_disponible.
+        - Baja: no suma a stock_total ni a stock_disponible.
+        - Activo sin préstamo: suma a stock_total y stock_disponible.
+        - Activo con préstamo activo (incluso vencido): suma a stock_total, no a stock_disponible.
+        - Múltiples préstamos históricos devueltos no multiplican existencias.
+        """
+        libro_aislado = Libro.objects.create(titulo='Disponibilidad Integral', isbn='9789999999999')
+
+        # 1. Ejemplar en mantenimiento
+        e_taller = Ejemplar.objects.create(libro=libro_aislado, codigo_inventario='DISP-TAL', estado='MANTENIMIENTO')
+        resp = self.client.get(reverse('catalogo-detail', args=[libro_aislado.pk]))
+        self.assertEqual(resp.data['stock_total'], 1)
+        self.assertEqual(resp.data['stock_disponible'], 0)
+
+        # 2. Ejemplar dado de baja (no altera total ni disponible)
+        Ejemplar.objects.create(libro=libro_aislado, codigo_inventario='DISP-BAJ', estado='BAJA')
+        resp = self.client.get(reverse('catalogo-detail', args=[libro_aislado.pk]))
+        self.assertEqual(resp.data['stock_total'], 1)
+        self.assertEqual(resp.data['stock_disponible'], 0)
+
+        # 3. Ejemplar activo libre
+        e_activo = Ejemplar.objects.create(libro=libro_aislado, codigo_inventario='DISP-ACT', estado='ACTIVO')
+        resp = self.client.get(reverse('catalogo-detail', args=[libro_aislado.pk]))
+        self.assertEqual(resp.data['stock_total'], 2)
+        self.assertEqual(resp.data['stock_disponible'], 1)
+
+        # 4. Préstamo activo (sin devolución)
+        p_activo = Prestamo.objects.create(
+            usuario=self.usuario, ejemplar=e_activo,
+            fecha_prestamo=date(2020, 1, 1), fecha_limite=date(2020, 1, 31),
+            fecha_devolucion=None,
+        )
+        resp = self.client.get(reverse('catalogo-detail', args=[libro_aislado.pk]))
+        self.assertEqual(resp.data['stock_total'], 2)
+        self.assertEqual(resp.data['stock_disponible'], 0)
+
+        # 5. Devolución restaura disponibilidad
+        p_activo.fecha_devolucion = date(2020, 1, 20)
+        p_activo.save()
+        resp = self.client.get(reverse('catalogo-detail', args=[libro_aislado.pk]))
+        self.assertEqual(resp.data['stock_total'], 2)
+        self.assertEqual(resp.data['stock_disponible'], 1)
+
+        # 6. Historial de múltiples préstamos devueltos no infla el stock
+        for d in range(1, 4):
+            Prestamo.objects.create(
+                usuario=self.usuario, ejemplar=e_activo,
+                fecha_prestamo=date(2020, 2, d), fecha_limite=date(2020, 2, 28),
+                fecha_devolucion=date(2020, 2, d + 1),
+            )
+        resp = self.client.get(reverse('catalogo-detail', args=[libro_aislado.pk]))
+        self.assertEqual(resp.data['stock_total'], 2)
+        self.assertEqual(resp.data['stock_disponible'], 1)
 
     def test_paginacion_y_validacion(self):
         respuesta = self.client.get(self.url, {'page_size': 1})
