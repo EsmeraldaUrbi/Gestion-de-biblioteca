@@ -94,6 +94,22 @@
       </div>
     </article>
 
+    <!-- Confirmación de registro exitoso -->
+    @if (mensajeExito()) {
+      <div class="success-banner" role="status" aria-live="polite">
+        <span class="success-icon" aria-hidden="true">✓</span>
+        <span class="success-text">{{ mensajeExito() }}</span>
+        <button
+          type="button"
+          class="btn-cerrar-banner"
+          (click)="limpiarMensajeExito()"
+          aria-label="Cerrar mensaje de confirmación"
+        >
+          ✕
+        </button>
+      </div>
+    }
+
     <!-- Sección de Ejemplares Físicos -->
     <section id="seccion-ejemplares" class="table-card" aria-label="Ejemplares físicos del libro">
       <header class="section-card-header">
@@ -110,11 +126,11 @@
           </span>
 
           <button
+            id="btn-abrir-registro-ejemplar"
             type="button"
-            class="secondary-button btn-nuevo-ejemplar"
-            disabled
-            title="Registro de ejemplares disponible en Etapa 5"
-            aria-label="Registrar un nuevo ejemplar (disponible en Etapa 5)"
+            class="primary-button btn-nuevo-ejemplar"
+            (click)="abrirModalRegistro()"
+            aria-label="Registrar un nuevo ejemplar físico"
           >
             + Registrar ejemplar
           </button>
@@ -223,5 +239,109 @@
         </footer>
       }
     </section>
+
+    <!-- Modal accesible para el registro de nuevos ejemplares físicos -->
+    @if (modalRegistroAbierto()) {
+      <div class="modal-backdrop" (click)="cerrarModalRegistro()">
+        <div
+          class="modal-dialog"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modal-registro-titulo"
+          (click)="$event.stopPropagation()"
+        >
+          <header class="modal-header">
+            <div>
+              <p class="modal-eyebrow">Acervo bibliográfico</p>
+              <h3 id="modal-registro-titulo">Registrar nuevo ejemplar</h3>
+            </div>
+            <button
+              type="button"
+              class="btn-cerrar-modal"
+              (click)="cerrarModalRegistro()"
+              [disabled]="guardandoEjemplar()"
+              aria-label="Cerrar formulario de registro"
+            >
+              ✕
+            </button>
+          </header>
+
+          <div class="modal-body">
+            <!-- Ficha resumida del libro -->
+            <div class="modal-book-summary">
+              <span class="summary-label">Libro asociado</span>
+              <div class="summary-title">{{ libro.titulo }}</div>
+              <div class="summary-meta-row">
+                <span class="summary-isbn">ISBN: {{ libro.isbn }}</span>
+                <div class="summary-status-hint">
+                  <span class="summary-status-text">Estado predeterminado:</span>
+                  <span class="status-badge badge--activo">
+                    <span class="status-dot" aria-hidden="true"></span>
+                    Activo
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            @if (errorRegistro()) {
+              <div class="modal-error" role="alert">
+                {{ errorRegistro() }}
+              </div>
+            }
+
+            <form [formGroup]="formRegistroEjemplar" (ngSubmit)="onSubmitRegistroEjemplar()" novalidate>
+              <div class="field-group">
+                <label for="codigo-inventario" class="field-label">
+                  Código de inventario <span class="required-mark">*</span>
+                </label>
+                <input
+                  id="codigo-inventario"
+                  type="text"
+                  formControlName="codigo_inventario"
+                  class="field-input"
+                  [class.field-input--error]="!!errorDeCodigo()"
+                  placeholder="Ej. CAS-003"
+                  maxlength="15"
+                  autocomplete="off"
+                  aria-describedby="error-codigo-inventario hint-codigo-inventario"
+                />
+                @if (errorDeCodigo()) {
+                  <p id="error-codigo-inventario" class="field-error" role="alert">
+                    {{ errorDeCodigo() }}
+                  </p>
+                }
+                <p id="hint-codigo-inventario" class="field-hint">
+                  Máximo 15 caracteres. Debe ser único en el sistema.
+                </p>
+              </div>
+
+              <div class="modal-actions">
+                <button
+                  type="button"
+                  class="secondary-button"
+                  (click)="cerrarModalRegistro()"
+                  [disabled]="guardandoEjemplar()"
+                >
+                  Cancelar
+                </button>
+                <button
+                  id="btn-guardar-ejemplar"
+                  type="submit"
+                  class="primary-button"
+                  [disabled]="guardandoEjemplar()"
+                >
+                  @if (guardandoEjemplar()) {
+                    <span class="btn-spinner" aria-hidden="true"></span>
+                    Guardando...
+                  } @else {
+                    Registrar ejemplar
+                  }
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    }
   }
 </section>

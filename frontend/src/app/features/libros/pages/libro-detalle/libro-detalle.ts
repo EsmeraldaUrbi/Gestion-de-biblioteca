@@ -9,6 +9,13 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import {
+  AbstractControl,
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
@@ -16,6 +23,7 @@ import {
   Ejemplar,
   EstadoEjemplar,
   Libro,
+  RegistrarEjemplarRequest,
 } from '../../models/libros.models';
 import { EjemplaresService } from '../../services/ejemplares.service';
 import { LibrosService } from '../../services/libros.service';
@@ -23,13 +31,14 @@ import { LibrosService } from '../../services/libros.service';
 @Component({
   selector: 'app-libro-detalle',
   standalone: true,
-  imports: [CommonModule, RouterLink],
+  imports: [CommonModule, RouterLink, ReactiveFormsModule],
   templateUrl: './libro-detalle.html',
   styleUrl: './libro-detalle.css',
 })
 export class LibroDetalleComponent implements OnInit {
   private readonly librosService = inject(LibrosService);
   private readonly ejemplaresService = inject(EjemplaresService);
+  private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
@@ -48,6 +57,15 @@ export class LibroDetalleComponent implements OnInit {
   readonly paginaEjemplares = signal<number>(1);
   readonly cargandoEjemplares = signal<boolean>(true);
   readonly errorEjemplares = signal<string | null>(null);
+
+  // Estado del registro de ejemplar (Etapa 5)
+  readonly modalRegistroAbierto = signal<boolean>(false);
+  readonly guardandoEjemplar = signal<boolean>(false);
+  readonly errorRegistro = signal<string | null>(null);
+  readonly errorCampoCodigo = signal<string | null>(null);
+  readonly mensajeExito = signal<string | null>(null);
+
+  formRegistroEjemplar!: FormGroup;
 
   // Señales computadas de paginación de ejemplares
   readonly totalPaginasEjemplares = computed(() =>
@@ -77,6 +95,7 @@ export class LibroDetalleComponent implements OnInit {
     }
 
     this.libroId = id;
+    this.inicializarFormularioRegistro();
     this.cargarLibro();
     this.cargarEjemplares();
 
@@ -90,6 +109,139 @@ export class LibroDetalleComponent implements OnInit {
             el?.scrollIntoView({ behavior: 'smooth' });
           }, 300);
         }
+      });
+  }
+
+  private inicializarFormularioRegistro(): void {
+    this.formRegistroEjemplar = this.fb.group({
+      codigo_inventario: [
+        '',
+        [
+          Validators.required,
+          Validators.maxLength(15),
+          this.noSoloEspaciosValidator,
+        ],
+      ],
+    });
+  }
+
+  private noSoloEspaciosValidator(
+    control: AbstractControl,
+  ): Record<string, boolean> | null {
+    if (
+      typeof control.value === 'string' &&
+      control.value.trim().length === 0 &&
+      control.value.length > 0
+    ) {
+      return { soloEspacios: true };
+    }
+    return null;
+  }
+
+  abrirModalRegistro(): void {
+    this.formRegistroEjemplar.reset({ codigo_inventario: '' });
+    this.errorRegistro.set(null);
+    this.errorCampoCodigo.set(null);
+    this.modalRegistroAbierto.set(true);
+  }
+
+  cerrarModalRegistro(): void {
+    if (this.guardandoEjemplar()) return;
+    this.modalRegistroAbierto.set(false);
+    this.errorRegistro.set(null);
+    this.errorCampoCodigo.set(null);
+  }
+
+  limpiarMensajeExito(): void {
+    this.mensajeExito.set(null);
+  }
+
+  errorDeCodigo(): string | null {
+    if (this.errorCampoCodigo()) {
+      return this.errorCampoCodigo();
+    }
+    const control = this.formRegistroEjemplar.get('codigo_inventario');
+    if (!control || !control.touched || !control.errors) return null;
+
+    if (control.errors['required']) return 'Este campo es obligatorio.';
+    if (control.errors['maxlength']) {
+      const max = control.errors['maxlength'].requiredLength as number;
+      return `Máximo ${max} caracteres.`;
+    }
+    if (control.errors['soloEspacios']) {
+      return 'No puede contener solo espacios en blanco.';
+    }
+    return null;
+  }
+
+  onSubmitRegistroEjemplar(): void {
+    if (this.guardandoEjemplar()) return;
+
+    this.formRegistroEjemplar.markAllAsTouched();
+    this.errorCampoCodigo.set(null);
+    this.errorRegistro.set(null);
+
+    if (this.formRegistroEjemplar.invalid) return;
+
+    const codigo = (
+      this.formRegistroEjemplar.get('codigo_inventario')?.value as string
+    ).trim();
+
+    this.guardandoEjemplar.set(true);
+
+    const payload: RegistrarEjemplarRequest = {
+      libro_id: this.libroId,
+      codigo_inventario: codigo,
+      estado: 'ACTIVO',
+    };
+
+    this.ejemplaresService
+      .registrar(payload)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.guardandoEjemplar.set(false)),
+      )
+      .subscribe({
+        next: (ejemplarCreado) => {
+          this.modalRegistroAbierto.set(false);
+          this.mensajeExito.set(
+            `Ejemplar con código «${ejemplarCreado.codigo_inventario}» registrado con éxito.`,
+          );
+          // Recargar listado respetando paginación
+          this.cargarEjemplares();
+        },
+        error: (error: HttpErrorResponse) => {
+          if (error.status === 400 && error.error) {
+            const err = error.error as Record<string, unknown>;
+            if (err['codigo_inventario']) {
+              const msgs = err['codigo_inventario'];
+              this.errorCampoCodigo.set(
+                Array.isArray(msgs) ? msgs.join(' ') : String(msgs),
+              );
+            } else if (err['non_field_errors']) {
+              const msgs = err['non_field_errors'];
+              this.errorRegistro.set(
+                Array.isArray(msgs) ? msgs.join(' ') : String(msgs),
+              );
+            } else if (err['detail']) {
+              this.errorRegistro.set(String(err['detail']));
+            } else {
+              this.errorRegistro.set(
+                'Revisa el código de inventario ingresado e inténtalo nuevamente.',
+              );
+            }
+          } else if (error.status === 0) {
+            this.errorRegistro.set('No fue posible conectar con el servidor.');
+          } else if (error.status === 404) {
+            this.errorRegistro.set('El libro ya no existe en el catálogo.');
+          } else if (error.status === 401) {
+            this.errorRegistro.set('Tu sesión ha vencido. Inicia sesión nuevamente.');
+          } else if (error.status === 403) {
+            this.errorRegistro.set('No tienes permiso para registrar ejemplares.');
+          } else {
+            this.errorRegistro.set('Ocurrió un error al registrar el ejemplar.');
+          }
+        },
       });
   }
 
