@@ -115,6 +115,24 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'libros/nuevo',
+        canActivate: [roleGuard],
+        data: { roles: ['bibliotecario'] },
+        loadComponent: () =>
+          import('./features/libros/pages/libro-nuevo/libro-nuevo').then(
+            (module) => module.LibroNuevoComponent,
+          ),
+      },
+      {
+        path: 'libros/:id/editar',
+        canActivate: [roleGuard],
+        data: { roles: ['bibliotecario'] },
+        loadComponent: () =>
+          import('./features/libros/pages/libro-editar/libro-editar').then(
+            (module) => module.LibroEditarComponent,
+          ),
+      },
+      {
         path: 'libros',
         canActivate: [roleGuard],
         data: { roles: ['bibliotecario'] },

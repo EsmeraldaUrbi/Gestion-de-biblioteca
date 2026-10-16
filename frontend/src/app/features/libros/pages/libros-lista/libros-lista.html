@@ -11,15 +11,14 @@
     <div class="header-actions">
       <span class="role-label">Bibliotecario</span>
 
-      <button
-        type="button"
-        class="primary-button primary-button--disabled"
-        disabled
-        title="Formulario de registro disponible en Etapa 3"
-        aria-disabled="true"
+      <a
+        id="btn-nuevo-libro"
+        routerLink="/libros/nuevo"
+        class="primary-button"
+        aria-label="Registrar un nuevo libro"
       >
         + Nuevo libro
-      </button>
+      </a>
     </div>
   </header>
 
@@ -90,8 +89,12 @@
           aria-label="Filtrar por categoría"
         >
           <option [ngValue]="null">Todas las categorías</option>
-          @for (cat of categoriasOpciones(); track cat.categoria_id) {
-            <option [ngValue]="cat.categoria_id">{{ cat.nombre_categoria }}</option>
+          @if (categoriasOpciones().length === 0 && !cargandoFiltros()) {
+            <option [ngValue]="null" disabled>No hay categorías registradas</option>
+          } @else {
+            @for (cat of categoriasOpciones(); track cat.categoria_id) {
+              <option [ngValue]="cat.categoria_id">{{ cat.nombre_categoria }}</option>
+            }
           }
         </select>
 
@@ -103,8 +106,12 @@
           aria-label="Filtrar por autor"
         >
           <option [ngValue]="null">Todos los autores</option>
-          @for (aut of autoresOpciones(); track aut.autor_id) {
-            <option [ngValue]="aut.autor_id">{{ aut.nombre }}</option>
+          @if (autoresOpciones().length === 0 && !cargandoFiltros()) {
+            <option [ngValue]="null" disabled>No hay autores registrados</option>
+          } @else {
+            @for (aut of autoresOpciones(); track aut.autor_id) {
+              <option [ngValue]="aut.autor_id">{{ aut.nombre }}</option>
+            }
           }
         </select>
 
@@ -194,15 +201,13 @@
                     >
                       Ver
                     </button>
-                    <button
-                      type="button"
-                      class="table-action-btn"
-                      disabled
-                      title="Edición del libro disponible en Etapa 3"
-                      aria-label="Editar {{ libro.titulo }}"
+                    <a
+                      [routerLink]="['/libros', libro.libro_id, 'editar']"
+                      class="table-action-btn table-action-btn--edit"
+                      [attr.aria-label]="'Editar ' + libro.titulo"
                     >
                       Editar
-                    </button>
+                    </a>
                     <button
                       type="button"
                       class="table-action-btn table-action-btn--secondary"

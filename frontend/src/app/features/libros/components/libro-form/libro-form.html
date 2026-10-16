@@ -1,0 +1,217 @@
+<section class="form-page">
+  <header class="form-page__header">
+    <p class="eyebrow">Administración de biblioteca • Acervo bibliográfico</p>
+    <h1>{{ tituloPagina }}</h1>
+    <p class="description">
+      @if (modo === 'registro') {
+        Completa los datos del nuevo título bibliográfico.
+      } @else {
+        Modifica los datos del libro. Los campos sin cambios no serán actualizados.
+      }
+    </p>
+  </header>
+
+  <div class="form-card">
+    <form [formGroup]="form" (ngSubmit)="onSubmit()" novalidate>
+
+      <!-- Título -->
+      <div class="field-group">
+        <label for="libro-titulo" class="field-label">
+          Título <span class="required-mark">*</span>
+        </label>
+        <input
+          id="libro-titulo"
+          type="text"
+          formControlName="titulo"
+          class="field-input"
+          [class.field-input--error]="errorDe('titulo')"
+          placeholder="Ej. Don Quijote de la Mancha"
+          maxlength="100"
+          autocomplete="off"
+          aria-describedby="error-titulo"
+        />
+        @if (errorDe('titulo')) {
+          <p id="error-titulo" class="field-error" role="alert">
+            {{ errorDe('titulo') }}
+          </p>
+        }
+        <p class="field-hint">Máximo 100 caracteres.</p>
+      </div>
+
+      <!-- ISBN -->
+      <div class="field-group">
+        <label for="libro-isbn" class="field-label">
+          ISBN <span class="required-mark">*</span>
+        </label>
+        <input
+          id="libro-isbn"
+          type="text"
+          formControlName="isbn"
+          class="field-input"
+          [class.field-input--error]="errorDe('isbn')"
+          placeholder="Ej. 9788424116286"
+          maxlength="13"
+          autocomplete="off"
+          aria-describedby="error-isbn"
+        />
+        @if (errorDe('isbn')) {
+          <p id="error-isbn" class="field-error" role="alert">
+            {{ errorDe('isbn') }}
+          </p>
+        }
+        <p class="field-hint">Máximo 13 caracteres. Debe ser único en el catálogo.</p>
+      </div>
+
+      <!-- Fecha de publicación -->
+      <div class="field-group">
+        <label for="libro-fecha" class="field-label">Fecha de publicación</label>
+        <input
+          id="libro-fecha"
+          type="date"
+          formControlName="fecha_publicacion"
+          class="field-input field-input--date"
+          [class.field-input--error]="errorDe('fecha_publicacion')"
+          aria-describedby="error-fecha"
+        />
+        @if (errorDe('fecha_publicacion')) {
+          <p id="error-fecha" class="field-error" role="alert">
+            {{ errorDe('fecha_publicacion') }}
+          </p>
+        }
+        <p class="field-hint">Opcional. Formato AAAA-MM-DD.</p>
+      </div>
+
+      <!-- Autores -->
+      <div class="field-group">
+        <label for="select-autor" class="field-label">Autores</label>
+        <p class="field-hint">Selecciona uno o más autores para asociar al libro.</p>
+
+        @if (autoresDisponibles.length === 0) {
+          <select
+            id="select-autor"
+            class="field-select"
+            disabled
+            aria-label="Seleccionar autor"
+          >
+            <option value="" selected>No hay autores registrados</option>
+          </select>
+          <p class="chips-empty">No hay autores registrados.</p>
+        } @else {
+          <select
+            id="select-autor"
+            class="field-select"
+            (change)="onSelectAutorChange($event)"
+            aria-label="Seleccionar autor"
+          >
+            <option value="" selected>-- Seleccionar autor para agregar --</option>
+            @for (autor of autoresDisponibles; track autor.autor_id) {
+              <option [value]="autor.autor_id" [disabled]="estaAutorSeleccionado(autor.autor_id)">
+                {{ autor.nombre }}{{ estaAutorSeleccionado(autor.autor_id) ? ' (ya seleccionado)' : '' }}
+              </option>
+            }
+          </select>
+
+          @if (autoresSeleccionados().length > 0) {
+            <div class="chips-list" role="group" aria-label="Autores seleccionados">
+              @for (id of autoresSeleccionados(); track id) {
+                <span class="chip-removable">
+                  <span class="chip__label">{{ obtenerNombreAutor(id) }}</span>
+                  <button
+                    type="button"
+                    class="chip__remove"
+                    (click)="quitarAutor(id)"
+                    [attr.aria-label]="'Quitar autor ' + obtenerNombreAutor(id)"
+                  >
+                    ✕
+                  </button>
+                </span>
+              }
+            </div>
+          }
+        }
+
+        @if (erroresAsociaciones('autor_ids')) {
+          <p class="field-error" role="alert">{{ erroresAsociaciones('autor_ids') }}</p>
+        }
+      </div>
+
+      <!-- Categorías -->
+      <div class="field-group">
+        <label for="select-categoria" class="field-label">Categorías</label>
+        <p class="field-hint">Selecciona una o más categorías temáticas.</p>
+
+        @if (categoriasDisponibles.length === 0) {
+          <select
+            id="select-categoria"
+            class="field-select"
+            disabled
+            aria-label="Seleccionar categoría"
+          >
+            <option value="" selected>No hay categorías registradas</option>
+          </select>
+          <p class="chips-empty">No hay categorías registradas.</p>
+        } @else {
+          <select
+            id="select-categoria"
+            class="field-select"
+            (change)="onSelectCategoriaChange($event)"
+            aria-label="Seleccionar categoría"
+          >
+            <option value="" selected>-- Seleccionar categoría para agregar --</option>
+            @for (cat of categoriasDisponibles; track cat.categoria_id) {
+              <option [value]="cat.categoria_id" [disabled]="estaCategoriaSeleccionada(cat.categoria_id)">
+                {{ cat.nombre_categoria }}{{ estaCategoriaSeleccionada(cat.categoria_id) ? ' (ya seleccionada)' : '' }}
+              </option>
+            }
+          </select>
+
+          @if (categoriasSeleccionadas().length > 0) {
+            <div class="chips-list" role="group" aria-label="Categorías seleccionadas">
+              @for (id of categoriasSeleccionadas(); track id) {
+                <span class="chip-removable">
+                  <span class="chip__label">{{ obtenerNombreCategoria(id) }}</span>
+                  <button
+                    type="button"
+                    class="chip__remove"
+                    (click)="quitarCategoria(id)"
+                    [attr.aria-label]="'Quitar categoría ' + obtenerNombreCategoria(id)"
+                  >
+                    ✕
+                  </button>
+                </span>
+              }
+            </div>
+          }
+        }
+
+        @if (erroresAsociaciones('categoria_ids')) {
+          <p class="field-error" role="alert">{{ erroresAsociaciones('categoria_ids') }}</p>
+        }
+      </div>
+
+      <!-- Acciones -->
+      <div class="form-actions">
+        <button
+          type="button"
+          class="btn-secondary"
+          (click)="onCancelar()"
+          [disabled]="guardando"
+        >
+          Cancelar
+        </button>
+        <button
+          id="btn-guardar-libro"
+          type="submit"
+          class="btn-primary"
+          [disabled]="guardando"
+        >
+          @if (guardando) {
+            <span class="btn-spinner" aria-hidden="true"></span>
+          }
+          {{ tituloBoton }}
+        </button>
+      </div>
+
+    </form>
+  </div>
+</section>

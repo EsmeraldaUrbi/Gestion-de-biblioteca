@@ -4,6 +4,7 @@ import {
 } from '@angular/core/testing';
 import { HttpErrorResponse } from '@angular/common/http';
 import { of, throwError } from 'rxjs';
+import { provideRouter } from '@angular/router';
 
 import { CatalogoOpciones } from '../../../catalogo/models/catalogo.models';
 import { CatalogoService } from '../../../catalogo/services/catalogo.service';
@@ -73,6 +74,7 @@ describe('LibrosListaComponent', () => {
     await TestBed.configureTestingModule({
       imports: [LibrosListaComponent],
       providers: [
+        provideRouter([{ path: '**', component: class {} }]),
         { provide: LibrosService, useValue: librosServiceMock },
         { provide: CatalogoService, useValue: catalogoServiceMock },
       ],
@@ -394,29 +396,174 @@ describe('LibrosListaComponent', () => {
     });
   });
 
-  describe('Acciones visuales protegidas para etapas futuras', () => {
-    it('el botón + Nuevo libro debe estar deshabilitado con título informativo', () => {
+  describe('Acciones visuales — Etapa 3 habilitada', () => {
+    it('el enlace + Nuevo libro debe estar activo y apuntar a /libros/nuevo', () => {
       fixture.detectChanges();
       const compiled = fixture.nativeElement as HTMLElement;
-      const btnNuevo = compiled.querySelector('.primary-button') as HTMLButtonElement;
+      const enlaceNuevo = compiled.querySelector('#btn-nuevo-libro') as HTMLAnchorElement | null;
 
-      expect(btnNuevo.disabled).toBe(true);
-      expect(btnNuevo.getAttribute('title')).toContain('Etapa 3');
+      // En Etapa 3 el botón es un <a> con routerLink, no un button disabled
+      expect(enlaceNuevo).toBeTruthy();
+      expect(enlaceNuevo?.hasAttribute('disabled')).toBe(false);
     });
 
-    it('los botones de acciones de fila (Ver, Editar, Ejemplares) deben estar deshabilitados', () => {
+    it('el botón Ver debe seguir deshabilitado (pendiente Etapa 4)', () => {
       fixture.detectChanges();
       const compiled = fixture.nativeElement as HTMLElement;
       const fila = compiled.querySelector('tbody tr');
-      const botonesAcciones = fila?.querySelectorAll('.table-action-btn') as NodeListOf<HTMLButtonElement>;
+      const btnVer = fila?.querySelector('.table-action-btn') as HTMLButtonElement | null;
 
-      expect(botonesAcciones.length).toBe(3);
-      expect(botonesAcciones[0].disabled).toBe(true);
-      expect(botonesAcciones[0].getAttribute('title')).toContain('Etapa 4'); // Ver
-      expect(botonesAcciones[1].disabled).toBe(true);
-      expect(botonesAcciones[1].getAttribute('title')).toContain('Etapa 3'); // Editar
-      expect(botonesAcciones[2].disabled).toBe(true);
-      expect(botonesAcciones[2].getAttribute('title')).toContain('Etapa 4'); // Ejemplares
+      expect(btnVer?.disabled).toBe(true);
+      expect(btnVer?.getAttribute('title')).toContain('Etapa 4');
+    });
+
+    it('el enlace Editar debe estar activo (Etapa 3)', () => {
+      fixture.detectChanges();
+      const compiled = fixture.nativeElement as HTMLElement;
+      const fila = compiled.querySelector('tbody tr');
+      const enlaceEditar = fila?.querySelector('.table-action-btn--edit') as HTMLAnchorElement | null;
+
+      expect(enlaceEditar).toBeTruthy();
+      expect(enlaceEditar?.hasAttribute('disabled')).toBe(false);
+    });
+
+    it('el botón Ejemplares debe seguir deshabilitado (pendiente Etapa 4)', () => {
+      fixture.detectChanges();
+      const compiled = fixture.nativeElement as HTMLElement;
+      const fila = compiled.querySelector('tbody tr');
+      const botonesAcciones = fila?.querySelectorAll('button.table-action-btn') as NodeListOf<HTMLButtonElement>;
+
+      // Ver (índice 0) y Ejemplares (índice 1) siguen siendo buttons disabled
+      expect(botonesAcciones[1]?.disabled).toBe(true);
+      expect(botonesAcciones[1]?.getAttribute('title')).toContain('Etapa 4');
+    });
+  });
+
+  describe('Pruebas de regresión — Corrección de búsqueda, concurrencia y filtros', () => {
+    it('debe permitir búsquedas consecutivas modificando el texto varias veces', () => {
+      vi.useFakeTimers();
+      fixture.detectChanges();
+      librosServiceMock.listar.mockClear();
+
+      // Primera búsqueda: "don"
+      component.actualizarBusquedaTitulo('don');
+      vi.advanceTimersByTime(300);
+      expect(librosServiceMock.listar).toHaveBeenCalledTimes(1);
+      expect(librosServiceMock.listar).toHaveBeenLastCalledWith(
+        expect.objectContaining({ titulo: 'don', page: 1 }),
+      );
+
+      // Segunda búsqueda consecutiva: "don quijote"
+      component.actualizarBusquedaTitulo('don quijote');
+      vi.advanceTimersByTime(300);
+      expect(librosServiceMock.listar).toHaveBeenCalledTimes(2);
+      expect(librosServiceMock.listar).toHaveBeenLastCalledWith(
+        expect.objectContaining({ titulo: 'don quijote', page: 1 }),
+      );
+
+      // Tercera búsqueda consecutiva: borrar texto a vacío
+      component.actualizarBusquedaTitulo('');
+      vi.advanceTimersByTime(300);
+      expect(librosServiceMock.listar).toHaveBeenCalledTimes(3);
+      expect(librosServiceMock.listar).toHaveBeenLastCalledWith(
+        expect.not.objectContaining({ titulo: expect.anything() }),
+      );
+    });
+
+    it('debe alternar de búsqueda por título a búsqueda por ISBN correctamente', () => {
+      vi.useFakeTimers();
+      fixture.detectChanges();
+      librosServiceMock.listar.mockClear();
+
+      // Búsqueda por título
+      component.actualizarBusquedaTitulo('Cien Años');
+      vi.advanceTimersByTime(300);
+      expect(librosServiceMock.listar).toHaveBeenLastCalledWith(
+        expect.objectContaining({ titulo: 'Cien Años' }),
+      );
+
+      // Cambiar a búsqueda por ISBN (limpiando título o manteniendo)
+      component.actualizarBusquedaTitulo('');
+      component.actualizarBusquedaIsbn('9780307474728');
+      vi.advanceTimersByTime(300);
+
+      expect(librosServiceMock.listar).toHaveBeenLastCalledWith(
+        expect.objectContaining({ isbn: '9780307474728' }),
+      );
+    });
+
+    it('debe recuperarse tras un error HTTP y permitir búsquedas posteriores sin recargar', () => {
+      vi.useFakeTimers();
+      fixture.detectChanges();
+      librosServiceMock.listar.mockClear();
+
+      // Provocar error HTTP en la búsqueda
+      librosServiceMock.listar.mockReturnValue(
+        throwError(() => new HttpErrorResponse({ status: 500 })),
+      );
+
+      component.actualizarBusquedaTitulo('error_trigger');
+      vi.advanceTimersByTime(300);
+
+      expect(component.error()).toBe('No fue posible cargar los libros. Inténtalo nuevamente.');
+      expect(component.cargando()).toBe(false);
+
+      // Siguiente búsqueda con servidor recuperado
+      librosServiceMock.listar.mockReturnValue(of(mockRespuestaPaginada));
+      component.actualizarBusquedaTitulo('recuperado');
+      vi.advanceTimersByTime(300);
+
+      expect(component.error()).toBeNull();
+      expect(component.libros().length).toBe(2);
+    });
+
+    it('debe manejar solicitudes superpuestas y evitar que respuestas fuera de orden sobrescriban la búsqueda reciente (switchMap)', () => {
+      vi.useFakeTimers();
+      fixture.detectChanges();
+      librosServiceMock.listar.mockClear();
+
+      const respuestaVieja: LibrosPaginados = {
+        count: 1,
+        next: null,
+        previous: null,
+        results: [mockLibros[0]],
+      };
+      const respuestaNueva: LibrosPaginados = {
+        count: 1,
+        next: null,
+        previous: null,
+        results: [mockLibros[1]],
+      };
+
+      // Mock que devuelve un observable según el término
+      librosServiceMock.listar.mockImplementation((filtros) => {
+        if (filtros.titulo === 'antigua') {
+          return of(respuestaVieja);
+        }
+        return of(respuestaNueva);
+      });
+
+      component.actualizarBusquedaTitulo('antigua');
+      component.actualizarBusquedaTitulo('nueva');
+      vi.advanceTimersByTime(300);
+
+      expect(librosServiceMock.listar).toHaveBeenLastCalledWith(
+        expect.objectContaining({ titulo: 'nueva' }),
+      );
+      expect(component.libros()[0].titulo).toBe('Don Quijote de la Mancha');
+    });
+
+    it('debe mostrar opciones disabled con mensaje informativo si los filtros de catálogo están vacíos', () => {
+      catalogoServiceMock.obtenerFiltros.mockReturnValue(of({ autores: [], categorias: [] }));
+      const fixtureVacio = TestBed.createComponent(LibrosListaComponent);
+      fixtureVacio.detectChanges();
+
+      const compiled = fixtureVacio.nativeElement as HTMLElement;
+      const selectCategoria = compiled.querySelector('#filtro-categoria') as HTMLSelectElement;
+      const selectAutor = compiled.querySelector('#filtro-autor') as HTMLSelectElement;
+
+      expect(selectCategoria.textContent).toContain('No hay categorías registradas');
+      expect(selectAutor.textContent).toContain('No hay autores registrados');
     });
   });
 });

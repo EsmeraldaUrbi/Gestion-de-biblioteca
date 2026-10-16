@@ -14,11 +14,18 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import {
+  catchError,
   debounceTime,
   distinctUntilChanged,
   finalize,
+  map,
+  merge,
+  of,
   Subject,
+  switchMap,
+  tap,
 } from 'rxjs';
 
 import {
@@ -39,6 +46,7 @@ import { LibrosService } from '../../services/libros.service';
   imports: [
     CommonModule,
     FormsModule,
+    RouterLink,
   ],
   templateUrl: './libros-lista.html',
   styleUrl: './libros-lista.css',
@@ -68,8 +76,16 @@ export class LibrosListaComponent implements OnInit {
   readonly categoriasOpciones = signal<CategoriaCatalogo[]>([]);
   readonly cargandoFiltros = signal<boolean>(false);
 
-  // Subject para debounce en búsquedas de texto
-  private readonly busquedaSubject = new Subject<void>();
+  // Subject para cambios de búsqueda en campos de texto (con debounce)
+  private readonly busquedaTextoSubject = new Subject<{
+    titulo: string;
+    isbn: string;
+  }>();
+
+  // Subject para recargas inmediatas (selects de autor/categoría, paginación, limpiar filtros)
+  private readonly recargaInmediataSubject = new Subject<{
+    resetPagina: boolean;
+  }>();
 
   // Señales computadas para la paginación y el resumen
   readonly totalPaginas = computed(() =>
@@ -94,15 +110,55 @@ export class LibrosListaComponent implements OnInit {
   });
 
   constructor() {
-    this.busquedaSubject
+    // Stream de búsquedas por texto con debounce y verificación de cambios reales
+    const busquedasTexto$ = this.busquedaTextoSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged(
+        (prev, curr) => prev.titulo === curr.titulo && prev.isbn === curr.isbn,
+      ),
+      map(() => {
+        this.pagina.set(1);
+        return this.construirFiltros(1);
+      }),
+    );
+
+    // Stream de acciones inmediatas (cambio de autor, categoría, página o limpieza)
+    const accionesInmediatas$ = this.recargaInmediataSubject.pipe(
+      map(({ resetPagina }) => {
+        if (resetPagina) {
+          this.pagina.set(1);
+        }
+        return this.construirFiltros(this.pagina());
+      }),
+    );
+
+    // Fusión de streams con switchMap para cancelar peticiones previas en vuelo
+    // y catchError interno para no romper el stream ante errores HTTP
+    merge(busquedasTexto$, accionesInmediatas$)
       .pipe(
-        debounceTime(300),
-        distinctUntilChanged(),
+        tap(() => {
+          this.cargando.set(true);
+          this.error.set(null);
+        }),
+        switchMap((filtros) =>
+          this.librosService.listar(filtros).pipe(
+            catchError((err: HttpErrorResponse) => {
+              this.procesarErrorListado(err);
+              return of(null);
+            }),
+          ),
+        ),
         takeUntilDestroyed(this.destroyRef),
       )
-      .subscribe(() => {
-        this.pagina.set(1);
-        this.cargarLibros();
+      .subscribe((respuesta) => {
+        this.cargando.set(false);
+        if (respuesta) {
+          this.libros.set(respuesta.results);
+          this.total.set(respuesta.count);
+        } else {
+          this.libros.set([]);
+          this.total.set(0);
+        }
       });
   }
 
@@ -111,12 +167,9 @@ export class LibrosListaComponent implements OnInit {
     this.cargarLibros();
   }
 
-  cargarLibros(): void {
-    this.cargando.set(true);
-    this.error.set(null);
-
+  construirFiltros(paginaActual: number): LibrosFiltros {
     const filtros: LibrosFiltros = {
-      page: this.pagina(),
+      page: paginaActual,
       page_size: this.pageSize,
     };
 
@@ -140,31 +193,25 @@ export class LibrosListaComponent implements OnInit {
       filtros.categoria_id = categoriaId;
     }
 
-    this.librosService
-      .listar(filtros)
-      .pipe(
-        takeUntilDestroyed(this.destroyRef),
-        finalize(() => this.cargando.set(false)),
-      )
-      .subscribe({
-        next: (respuesta) => {
-          this.libros.set(respuesta.results);
-          this.total.set(respuesta.count);
-        },
-        error: (error: HttpErrorResponse) => {
-          if (error.status === 0) {
-            this.error.set('No fue posible conectar con el servidor.');
-          } else if (error.status === 401) {
-            this.error.set('Tu sesión ha vencido.');
-          } else if (error.status === 403) {
-            this.error.set('No tienes permiso para consultar libros.');
-          } else {
-            this.error.set(
-              'No fue posible cargar los libros. Inténtalo nuevamente.',
-            );
-          }
-        },
-      });
+    return filtros;
+  }
+
+  cargarLibros(): void {
+    this.recargaInmediataSubject.next({ resetPagina: false });
+  }
+
+  private procesarErrorListado(error: HttpErrorResponse): void {
+    if (error.status === 0) {
+      this.error.set('No fue posible conectar con el servidor.');
+    } else if (error.status === 401) {
+      this.error.set('Tu sesión ha vencido.');
+    } else if (error.status === 403) {
+      this.error.set('No tienes permiso para consultar libros.');
+    } else {
+      this.error.set(
+        'No fue posible cargar los libros. Inténtalo nuevamente.',
+      );
+    }
   }
 
   cargarOpcionesFiltros(): void {
@@ -181,7 +228,6 @@ export class LibrosListaComponent implements OnInit {
           this.categoriasOpciones.set(opciones.categorias || []);
         },
         error: () => {
-          // Si la carga de filtros falla, el listado de libros sigue siendo funcional.
           this.autoresOpciones.set([]);
           this.categoriasOpciones.set([]);
         },
@@ -190,24 +236,28 @@ export class LibrosListaComponent implements OnInit {
 
   actualizarBusquedaTitulo(valor: string): void {
     this.busquedaTitulo.set(valor);
-    this.busquedaSubject.next();
+    this.busquedaTextoSubject.next({
+      titulo: valor.trim(),
+      isbn: this.busquedaIsbn().trim(),
+    });
   }
 
   actualizarBusquedaIsbn(valor: string): void {
     this.busquedaIsbn.set(valor);
-    this.busquedaSubject.next();
+    this.busquedaTextoSubject.next({
+      titulo: this.busquedaTitulo().trim(),
+      isbn: valor.trim(),
+    });
   }
 
   cambiarAutor(autorId: number | null): void {
     this.autorSeleccionado.set(autorId);
-    this.pagina.set(1);
-    this.cargarLibros();
+    this.recargaInmediataSubject.next({ resetPagina: true });
   }
 
   cambiarCategoria(categoriaId: number | null): void {
     this.categoriaSeleccionada.set(categoriaId);
-    this.pagina.set(1);
-    this.cargarLibros();
+    this.recargaInmediataSubject.next({ resetPagina: true });
   }
 
   limpiarFiltros(): void {
@@ -215,8 +265,7 @@ export class LibrosListaComponent implements OnInit {
     this.busquedaIsbn.set('');
     this.autorSeleccionado.set(null);
     this.categoriaSeleccionada.set(null);
-    this.pagina.set(1);
-    this.cargarLibros();
+    this.recargaInmediataSubject.next({ resetPagina: true });
   }
 
   cambiarPagina(nuevaPagina: number): void {

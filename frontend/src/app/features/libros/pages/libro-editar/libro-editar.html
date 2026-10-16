@@ -1,0 +1,69 @@
+<div class="page-wrapper">
+
+  @if (cargando()) {
+    <div class="loading-state" role="status">
+      <span class="spinner" aria-hidden="true"></span>
+      Cargando datos del libro...
+    </div>
+
+  } @else if (errorCarga()) {
+    <div class="error-state" role="alert">
+      <p class="error-state__msg">{{ errorCarga() }}</p>
+      <div class="error-state__actions">
+        <button type="button" class="btn-secondary" (click)="cargarDatos()">
+          Reintentar
+        </button>
+        <a routerLink="/libros" class="btn-link">Volver al listado</a>
+      </div>
+    </div>
+
+  } @else if (libroActualizado()) {
+    <!-- Confirmación de éxito -->
+    <section class="success-card" role="status" aria-live="polite">
+      <div class="success-icon" aria-hidden="true">✓</div>
+      <h2>Cambios guardados</h2>
+      <p class="success-detail">
+        <strong>{{ libroActualizado()!.titulo }}</strong> ha sido actualizado correctamente.
+      </p>
+      <div class="success-actions">
+        <button
+          id="btn-editar-de-nuevo"
+          type="button"
+          class="btn-secondary"
+          (click)="libroActualizado.set(null)"
+        >
+          Seguir editando
+        </button>
+        <a
+          id="btn-volver-lista-editar"
+          routerLink="/libros"
+          class="btn-primary"
+        >
+          Volver al listado
+        </a>
+      </div>
+    </section>
+
+  } @else {
+    <!-- Error general del guardado -->
+    @if (errorGeneral()) {
+      <div class="alert-error" role="alert">
+        {{ errorGeneral() }}
+      </div>
+    }
+
+    @if (libro()) {
+      <app-libro-form
+        modo="edicion"
+        [libro]="libro()"
+        [autoresDisponibles]="autoresDisponibles()"
+        [categoriasDisponibles]="categoriasDisponibles()"
+        [guardando]="guardando()"
+        [erroresServidor]="erroresServidor()"
+        (guardar)="modificar($event)"
+        (cancelar)="volver()"
+      />
+    }
+  }
+
+</div>

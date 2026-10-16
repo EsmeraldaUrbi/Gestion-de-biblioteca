@@ -1,0 +1,71 @@
+<div class="page-wrapper">
+  @if (libroCreado()) {
+    <!-- Confirmación de éxito -->
+    <section class="success-card" role="status" aria-live="polite">
+      <div class="success-icon" aria-hidden="true">✓</div>
+      <h2>¡Libro registrado con éxito!</h2>
+      <p class="success-detail">
+        <strong>{{ libroCreado()!.titulo }}</strong> (ISBN: {{ libroCreado()!.isbn }})
+        ha sido añadido al catálogo bibliográfico.
+      </p>
+      <div class="success-actions">
+        <a
+          id="btn-registrar-otro"
+          routerLink="/libros/nuevo"
+          class="btn-primary"
+          (click)="libroCreado.set(null)"
+        >
+          Registrar otro libro
+        </a>
+        <a
+          id="btn-volver-lista"
+          routerLink="/libros"
+          class="btn-secondary"
+        >
+          Volver al listado
+        </a>
+      </div>
+    </section>
+
+  } @else {
+
+    <!-- Aviso de error al cargar opciones (no bloquea el formulario) -->
+    @if (errorFiltros()) {
+      <div class="alert-warning" role="alert">
+        <span>⚠ {{ errorFiltros() }}</span>
+        <button
+          type="button"
+          class="btn-retry"
+          (click)="cargarOpciones()"
+        >
+          Reintentar
+        </button>
+      </div>
+    }
+
+    <!-- Error general del guardado -->
+    @if (errorGeneral()) {
+      <div class="alert-error" role="alert">
+        {{ errorGeneral() }}
+      </div>
+    }
+
+    @if (cargandoFiltros()) {
+      <div class="loading-state" role="status">
+        <span class="spinner" aria-hidden="true"></span>
+        Cargando opciones del catálogo...
+      </div>
+    }
+
+    <app-libro-form
+      modo="registro"
+      [autoresDisponibles]="autoresDisponibles()"
+      [categoriasDisponibles]="categoriasDisponibles()"
+      [guardando]="guardando()"
+      [erroresServidor]="erroresServidor()"
+      (guardar)="registrar($event)"
+      (cancelar)="volver()"
+    />
+
+  }
+</div>
