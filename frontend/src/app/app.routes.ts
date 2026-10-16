@@ -133,6 +133,15 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'libros/:id',
+        canActivate: [roleGuard],
+        data: { roles: ['bibliotecario'] },
+        loadComponent: () =>
+          import('./features/libros/pages/libro-detalle/libro-detalle').then(
+            (module) => module.LibroDetalleComponent,
+          ),
+      },
+      {
         path: 'libros',
         canActivate: [roleGuard],
         data: { roles: ['bibliotecario'] },

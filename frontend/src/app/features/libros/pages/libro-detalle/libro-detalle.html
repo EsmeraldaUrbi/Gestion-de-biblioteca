@@ -1,0 +1,227 @@
+<section class="detalle-page">
+  <!-- Navegación superior -->
+  <header class="page-header">
+    <a routerLink="/libros" class="back-link" aria-label="Volver a la gestión de libros">
+      ← Volver a Gestión de Libros
+    </a>
+
+    <div class="header-main">
+      <div>
+        <p class="eyebrow">Administración de biblioteca • Acervo bibliográfico</p>
+        <h1>{{ libro()?.titulo || 'Detalle del libro' }}</h1>
+        <p class="description">
+          Ficha bibliográfica y control de ejemplares físicos registrados.
+        </p>
+      </div>
+
+      @if (libro(); as libro) {
+        <div class="header-actions">
+          <a
+            id="btn-editar-libro"
+            [routerLink]="['/libros', libro.libro_id, 'editar']"
+            class="primary-button"
+            aria-label="Editar datos del libro"
+          >
+            Editar libro
+          </a>
+        </div>
+      }
+    </div>
+  </header>
+
+  <!-- Estado de carga del libro -->
+  @if (cargandoLibro()) {
+    <div class="state-card" role="status">
+      <p>Cargando información del libro...</p>
+    </div>
+  } @else if (errorLibro()) {
+    <!-- Error al consultar el libro -->
+    <div class="state-card state-card--error" role="alert">
+      <p>{{ errorLibro() }}</p>
+      <div class="state-actions">
+        <button
+          type="button"
+          class="secondary-button"
+          (click)="cargarLibro()"
+        >
+          Reintentar
+        </button>
+        <a routerLink="/libros" class="secondary-button">
+          Volver a Gestión de Libros
+        </a>
+      </div>
+    </div>
+  } @else if (libro(); as libro) {
+    <!-- Ficha bibliográfica -->
+    <article class="detail-card" aria-label="Ficha bibliográfica">
+      <header class="detail-card__header">
+        <div class="book-identity">
+          <span class="book-id-badge">Libro #{{ libro.libro_id }}</span>
+          <h2>{{ libro.titulo }}</h2>
+        </div>
+      </header>
+
+      <div class="data-grid">
+        <div class="data-item">
+          <span class="data-label">ISBN</span>
+          <span class="isbn-badge">{{ libro.isbn }}</span>
+        </div>
+
+        <div class="data-item">
+          <span class="data-label">Fecha de publicación</span>
+          <span class="data-value">{{ formatearFecha(libro.fecha_publicacion) }}</span>
+        </div>
+
+        <div class="data-item data-item--full">
+          <span class="data-label">Autores</span>
+          <p class="data-value data-value--authors">
+            {{ formatearAutores(libro) }}
+          </p>
+        </div>
+
+        <div class="data-item data-item--full">
+          <span class="data-label">Categorías</span>
+          <div class="categories-list">
+            @if (libro.categorias.length > 0) {
+              @for (cat of libro.categorias; track cat.categoria_id) {
+                <span class="category-chip">{{ cat.nombre_categoria }}</span>
+              }
+            } @else {
+              <span class="empty-badge">Sin categorías asignadas</span>
+            }
+          </div>
+        </div>
+      </div>
+    </article>
+
+    <!-- Sección de Ejemplares Físicos -->
+    <section id="seccion-ejemplares" class="table-card" aria-label="Ejemplares físicos del libro">
+      <header class="section-card-header">
+        <div>
+          <h3>Ejemplares físicos asociados</h3>
+          <p class="section-subtitle">
+            Control de copias físicas pertenecientes a este título.
+          </p>
+        </div>
+
+        <div class="section-actions">
+          <span class="count-badge">
+            Total: <strong>{{ totalEjemplares() }}</strong>
+          </span>
+
+          <button
+            type="button"
+            class="secondary-button btn-nuevo-ejemplar"
+            disabled
+            title="Registro de ejemplares disponible en Etapa 5"
+            aria-label="Registrar un nuevo ejemplar (disponible en Etapa 5)"
+          >
+            + Registrar ejemplar
+          </button>
+        </div>
+      </header>
+
+      @if (cargandoEjemplares()) {
+        <div class="state-message" role="status">
+          <p>Cargando ejemplares físicos...</p>
+        </div>
+      } @else if (errorEjemplares()) {
+        <div class="state-message state-message--error" role="alert">
+          <p>{{ errorEjemplares() }}</p>
+          <button
+            type="button"
+            class="secondary-button"
+            (click)="cargarEjemplares()"
+          >
+            Reintentar
+          </button>
+        </div>
+      } @else if (ejemplares().length === 0) {
+        <div class="state-message">
+          <p class="empty-title">Sin ejemplares registrados</p>
+          <p class="empty-desc">
+            Este libro aún no cuenta con ejemplares físicos registrados en el catálogo.
+          </p>
+        </div>
+      } @else {
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col" class="th-id"># ID</th>
+                <th scope="col">Código de inventario</th>
+                <th scope="col">Estado operativo</th>
+                <th scope="col" class="th-actions">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (ejemplar of ejemplares(); track ejemplar.ejemplar_id) {
+                <tr>
+                  <td class="td-id">
+                    <span class="id-text">#{{ ejemplar.ejemplar_id }}</span>
+                  </td>
+                  <td>
+                    <span class="inventory-code">{{ ejemplar.codigo_inventario }}</span>
+                  </td>
+                  <td>
+                    <span
+                      class="status-badge"
+                      [ngClass]="obtenerClaseEstado(ejemplar.estado)"
+                      [attr.aria-label]="'Estado operativo: ' + obtenerTextoEstado(ejemplar.estado)"
+                    >
+                      <span class="status-dot" aria-hidden="true"></span>
+                      {{ obtenerTextoEstado(ejemplar.estado) }}
+                    </span>
+                  </td>
+                  <td class="td-actions">
+                    <button
+                      type="button"
+                      class="table-action-btn"
+                      disabled
+                      title="Cambio de estado disponible en Etapa 5"
+                      [attr.aria-label]="'Cambiar estado del ejemplar ' + ejemplar.codigo_inventario + ' (disponible en Etapa 5)'"
+                    >
+                      Editar estado
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <footer class="pagination">
+          <p>
+            Mostrando {{ primerRegistroEjemplar() }}-{{ ultimoRegistroEjemplar() }} de {{ totalEjemplares() }} ejemplares
+          </p>
+
+          <div class="pagination-controls">
+            <button
+              type="button"
+              class="secondary-button"
+              [disabled]="paginaEjemplares() <= 1 || cargandoEjemplares()"
+              (click)="cambiarPaginaEjemplares(paginaEjemplares() - 1)"
+              aria-label="Página anterior de ejemplares"
+            >
+              &lt; Anterior
+            </button>
+
+            <span class="page-indicator">
+              Página {{ paginaEjemplares() }} de {{ totalPaginasEjemplares() }}
+            </span>
+
+            <button
+              type="button"
+              class="secondary-button"
+              [disabled]="paginaEjemplares() >= totalPaginasEjemplares() || cargandoEjemplares()"
+              (click)="cambiarPaginaEjemplares(paginaEjemplares() + 1)"
+              aria-label="Página siguiente de ejemplares"
+            >
+              Siguiente &gt;
+            </button>
+          </div>
+        </footer>
+      }
+    </section>
+  }
+</section>

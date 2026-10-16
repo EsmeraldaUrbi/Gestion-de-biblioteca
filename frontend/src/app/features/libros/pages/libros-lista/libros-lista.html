@@ -192,15 +192,13 @@
                 </td>
                 <td class="td-actions">
                   <div class="action-buttons-group">
-                    <button
-                      type="button"
-                      class="table-action-btn"
-                      disabled
-                      title="Detalle del libro disponible en Etapa 4"
-                      aria-label="Ver detalle de {{ libro.titulo }}"
+                    <a
+                      [routerLink]="['/libros', libro.libro_id]"
+                      class="table-action-btn table-action-btn--view"
+                      [attr.aria-label]="'Ver detalle de ' + libro.titulo"
                     >
                       Ver
-                    </button>
+                    </a>
                     <a
                       [routerLink]="['/libros', libro.libro_id, 'editar']"
                       class="table-action-btn table-action-btn--edit"
@@ -208,15 +206,14 @@
                     >
                       Editar
                     </a>
-                    <button
-                      type="button"
+                    <a
+                      [routerLink]="['/libros', libro.libro_id]"
+                      fragment="ejemplares"
                       class="table-action-btn table-action-btn--secondary"
-                      disabled
-                      title="Gestión de ejemplares disponible en Etapa 4"
-                      aria-label="Gestionar ejemplares de {{ libro.titulo }}"
+                      [attr.aria-label]="'Gestionar ejemplares de ' + libro.titulo"
                     >
                       Ejemplares
-                    </button>
+                    </a>
                   </div>
                 </td>
               </tr>

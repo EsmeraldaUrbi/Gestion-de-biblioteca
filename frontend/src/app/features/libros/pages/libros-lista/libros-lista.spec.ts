@@ -396,28 +396,28 @@ describe('LibrosListaComponent', () => {
     });
   });
 
-  describe('Acciones visuales — Etapa 3 habilitada', () => {
+  describe('Acciones visuales — Etapa 4 habilitada', () => {
     it('el enlace + Nuevo libro debe estar activo y apuntar a /libros/nuevo', () => {
       fixture.detectChanges();
       const compiled = fixture.nativeElement as HTMLElement;
       const enlaceNuevo = compiled.querySelector('#btn-nuevo-libro') as HTMLAnchorElement | null;
 
-      // En Etapa 3 el botón es un <a> con routerLink, no un button disabled
       expect(enlaceNuevo).toBeTruthy();
       expect(enlaceNuevo?.hasAttribute('disabled')).toBe(false);
     });
 
-    it('el botón Ver debe seguir deshabilitado (pendiente Etapa 4)', () => {
+    it('el enlace Ver debe estar activo y apuntar a /libros/:id (Etapa 4)', () => {
       fixture.detectChanges();
       const compiled = fixture.nativeElement as HTMLElement;
       const fila = compiled.querySelector('tbody tr');
-      const btnVer = fila?.querySelector('.table-action-btn') as HTMLButtonElement | null;
+      const enlaceVer = fila?.querySelector('.table-action-btn--view') as HTMLAnchorElement | null;
 
-      expect(btnVer?.disabled).toBe(true);
-      expect(btnVer?.getAttribute('title')).toContain('Etapa 4');
+      expect(enlaceVer).toBeTruthy();
+      expect(enlaceVer?.tagName.toLowerCase()).toBe('a');
+      expect(enlaceVer?.hasAttribute('disabled')).toBe(false);
     });
 
-    it('el enlace Editar debe estar activo (Etapa 3)', () => {
+    it('el enlace Editar debe estar activo y apuntar a /libros/:id/editar', () => {
       fixture.detectChanges();
       const compiled = fixture.nativeElement as HTMLElement;
       const fila = compiled.querySelector('tbody tr');
@@ -427,15 +427,15 @@ describe('LibrosListaComponent', () => {
       expect(enlaceEditar?.hasAttribute('disabled')).toBe(false);
     });
 
-    it('el botón Ejemplares debe seguir deshabilitado (pendiente Etapa 4)', () => {
+    it('el enlace Ejemplares debe estar activo y apuntar a /libros/:id con fragmento ejemplares (Etapa 4)', () => {
       fixture.detectChanges();
       const compiled = fixture.nativeElement as HTMLElement;
       const fila = compiled.querySelector('tbody tr');
-      const botonesAcciones = fila?.querySelectorAll('button.table-action-btn') as NodeListOf<HTMLButtonElement>;
+      const enlaceEjemplares = fila?.querySelector('.table-action-btn--secondary') as HTMLAnchorElement | null;
 
-      // Ver (índice 0) y Ejemplares (índice 1) siguen siendo buttons disabled
-      expect(botonesAcciones[1]?.disabled).toBe(true);
-      expect(botonesAcciones[1]?.getAttribute('title')).toContain('Etapa 4');
+      expect(enlaceEjemplares).toBeTruthy();
+      expect(enlaceEjemplares?.tagName.toLowerCase()).toBe('a');
+      expect(enlaceEjemplares?.hasAttribute('disabled')).toBe(false);
     });
   });
 
