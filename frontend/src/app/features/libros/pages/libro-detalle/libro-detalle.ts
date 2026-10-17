@@ -20,6 +20,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
 import {
+  CambiarEstadoEjemplarRequest,
   Ejemplar,
   EstadoEjemplar,
   Libro,
@@ -27,6 +28,27 @@ import {
 } from '../../models/libros.models';
 import { EjemplaresService } from '../../services/ejemplares.service';
 import { LibrosService } from '../../services/libros.service';
+
+/** Etiquetas de presentación para cada estado operativo. */
+const ESTADO_LABELS: Record<EstadoEjemplar, string> = {
+  ACTIVO: 'Activo',
+  MANTENIMIENTO: 'Mantenimiento',
+  BAJA: 'Baja',
+};
+
+/** Clases CSS de badge para cada estado operativo. */
+const ESTADO_CLASES: Record<EstadoEjemplar, string> = {
+  ACTIVO: 'badge--activo',
+  MANTENIMIENTO: 'badge--mantenimiento',
+  BAJA: 'badge--baja',
+};
+
+/** Todos los estados válidos (RN-03). */
+export const ESTADOS_VALIDOS: EstadoEjemplar[] = [
+  'ACTIVO',
+  'MANTENIMIENTO',
+  'BAJA',
+];
 
 @Component({
   selector: 'app-libro-detalle',
@@ -45,6 +67,9 @@ export class LibroDetalleComponent implements OnInit {
 
   libroId!: number;
   readonly pageSize = 10;
+
+  /** Expone la lista de estados para la plantilla. */
+  readonly estadosValidos = ESTADOS_VALIDOS;
 
   // Estado del libro
   readonly libro = signal<Libro | null>(null);
@@ -66,6 +91,37 @@ export class LibroDetalleComponent implements OnInit {
   readonly mensajeExito = signal<string | null>(null);
 
   formRegistroEjemplar!: FormGroup;
+
+  // ── Estado del modal de cambio de estado (Etapa 6) ──────────────────────────
+  /** Ejemplar seleccionado para cambiar su estado; null = modal cerrado. */
+  readonly ejemplarSeleccionado = signal<Ejemplar | null>(null);
+  /** Estado nuevo elegido por el usuario en el modal. */
+  readonly estadoNuevo = signal<EstadoEjemplar | null>(null);
+  /** true mientras se espera respuesta del PATCH. */
+  readonly cambiandoEstado = signal<boolean>(false);
+  /** Mensaje de error dentro del modal de cambio de estado. */
+  readonly errorCambioEstado = signal<string | null>(null);
+
+  /** Computed: true si el modal de cambio de estado está abierto. */
+  readonly modalEstadoAbierto = computed(
+    () => this.ejemplarSeleccionado() !== null,
+  );
+
+  /**
+   * Computed: true si el usuario puede confirmar el cambio.
+   * Requiere que el estado nuevo sea distinto al actual y no haya petición en vuelo.
+   */
+  readonly puedeConfirmarCambio = computed(() => {
+    const sel = this.ejemplarSeleccionado();
+    const nuevo = this.estadoNuevo();
+    return (
+      !this.cambiandoEstado() &&
+      nuevo !== null &&
+      sel !== null &&
+      nuevo !== sel.estado
+    );
+  });
+  // ────────────────────────────────────────────────────────────────────────────
 
   // Señales computadas de paginación de ejemplares
   readonly totalPaginasEjemplares = computed(() =>
@@ -137,6 +193,8 @@ export class LibroDetalleComponent implements OnInit {
     }
     return null;
   }
+
+  // ── Registro de ejemplar (Etapa 5) ─────────────────────────────────────────
 
   abrirModalRegistro(): void {
     this.formRegistroEjemplar.reset({ codigo_inventario: '' });
@@ -245,6 +303,112 @@ export class LibroDetalleComponent implements OnInit {
       });
   }
 
+  // ── Cambio de estado de ejemplar (Etapa 6) ─────────────────────────────────
+
+  /**
+   * Abre el modal de cambio de estado para el ejemplar indicado.
+   * Pre-selecciona el estado actual para que el usuario lo vea inmediatamente.
+   */
+  abrirModalEstado(ejemplar: Ejemplar): void {
+    this.ejemplarSeleccionado.set(ejemplar);
+    this.estadoNuevo.set(ejemplar.estado);
+    this.errorCambioEstado.set(null);
+  }
+
+  /** Cierra el modal de cambio de estado. No permite cerrar mientras hay petición en vuelo. */
+  cerrarModalEstado(): void {
+    if (this.cambiandoEstado()) return;
+    this.ejemplarSeleccionado.set(null);
+    this.estadoNuevo.set(null);
+    this.errorCambioEstado.set(null);
+  }
+
+  /** Actualiza el estado nuevo seleccionado por el usuario. */
+  seleccionarEstadoNuevo(estado: EstadoEjemplar): void {
+    this.estadoNuevo.set(estado);
+    this.errorCambioEstado.set(null);
+  }
+
+  /**
+   * Envía el PATCH al backend con únicamente `{ estado }`.
+   * Previene doble envío con la señal `cambiandoEstado`.
+   * Si el backend responde con error, conserva el estado original visible.
+   */
+  onConfirmarCambioEstado(): void {
+    if (!this.puedeConfirmarCambio()) return;
+
+    const ejemplar = this.ejemplarSeleccionado()!;
+    const nuevoEstado = this.estadoNuevo()!;
+
+    this.cambiandoEstado.set(true);
+    this.errorCambioEstado.set(null);
+
+    const payload: CambiarEstadoEjemplarRequest = { estado: nuevoEstado };
+
+    this.ejemplaresService
+      .cambiarEstado(ejemplar.ejemplar_id, payload)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.cambiandoEstado.set(false)),
+      )
+      .subscribe({
+        next: (actualizado) => {
+          this.ejemplarSeleccionado.set(null);
+          this.estadoNuevo.set(null);
+          this.mensajeExito.set(
+            `Estado del ejemplar «${actualizado.codigo_inventario}» actualizado a ${this.obtenerTextoEstado(actualizado.estado)}.`,
+          );
+          // Recargar tabla manteniendo la página actual
+          this.cargarEjemplares();
+        },
+        error: (error: HttpErrorResponse) => {
+          // No actualizar el estado en pantalla; conservar el original
+          if (error.status === 400 && error.error) {
+            const err = error.error as Record<string, unknown>;
+            if (err['detail']) {
+              this.errorCambioEstado.set(String(err['detail']));
+            } else if (err['estado']) {
+              const msgs = err['estado'];
+              this.errorCambioEstado.set(
+                Array.isArray(msgs) ? msgs.join(' ') : String(msgs),
+              );
+            } else if (err['non_field_errors']) {
+              const msgs = err['non_field_errors'];
+              this.errorCambioEstado.set(
+                Array.isArray(msgs) ? msgs.join(' ') : String(msgs),
+              );
+            } else {
+              this.errorCambioEstado.set(
+                'No se pudo realizar el cambio de estado. Verifica si el ejemplar tiene un préstamo activo.',
+              );
+            }
+          } else if (error.status === 0) {
+            this.errorCambioEstado.set(
+              'No fue posible conectar con el servidor.',
+            );
+          } else if (error.status === 404) {
+            this.errorCambioEstado.set(
+              'El ejemplar ya no existe en el sistema.',
+            );
+          } else if (error.status === 401) {
+            this.errorCambioEstado.set(
+              'Tu sesión ha vencido. Inicia sesión nuevamente.',
+            );
+          } else if (error.status === 403) {
+            this.errorCambioEstado.set(
+              'No tienes permiso para modificar el estado de ejemplares.',
+            );
+          } else {
+            this.errorCambioEstado.set(
+              'Ocurrió un error al intentar cambiar el estado.',
+            );
+          }
+        },
+      });
+  }
+
+  // ── Datos del libro ─────────────────────────────────────────────────────────
+
   cargarLibro(): void {
     this.cargandoLibro.set(true);
     this.errorLibro.set(null);
@@ -330,6 +494,8 @@ export class LibroDetalleComponent implements OnInit {
     this.cargarEjemplares();
   }
 
+  // ── Utilidades de presentación ──────────────────────────────────────────────
+
   formatearFecha(fecha: string | null): string {
     if (!fecha) {
       return 'No registrada';
@@ -345,28 +511,10 @@ export class LibroDetalleComponent implements OnInit {
   }
 
   obtenerClaseEstado(estado: EstadoEjemplar): string {
-    switch (estado) {
-      case 'ACTIVO':
-        return 'badge--activo';
-      case 'MANTENIMIENTO':
-        return 'badge--mantenimiento';
-      case 'BAJA':
-        return 'badge--baja';
-      default:
-        return '';
-    }
+    return ESTADO_CLASES[estado] ?? '';
   }
 
   obtenerTextoEstado(estado: EstadoEjemplar): string {
-    switch (estado) {
-      case 'ACTIVO':
-        return 'Activo';
-      case 'MANTENIMIENTO':
-        return 'Mantenimiento';
-      case 'BAJA':
-        return 'Baja';
-      default:
-        return estado;
-    }
+    return ESTADO_LABELS[estado] ?? estado;
   }
 }

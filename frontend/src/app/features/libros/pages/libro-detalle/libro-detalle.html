@@ -94,7 +94,7 @@
       </div>
     </article>
 
-    <!-- Confirmación de registro exitoso -->
+    <!-- Confirmación de operación exitosa -->
     @if (mensajeExito()) {
       <div class="success-banner" role="status" aria-live="polite">
         <span class="success-icon" aria-hidden="true">✓</span>
@@ -190,12 +190,12 @@
                     </span>
                   </td>
                   <td class="td-actions">
+                    <!-- Etapa 6: botón activo para cambio de estado -->
                     <button
                       type="button"
-                      class="table-action-btn"
-                      disabled
-                      title="Cambio de estado disponible en Etapa 5"
-                      [attr.aria-label]="'Cambiar estado del ejemplar ' + ejemplar.codigo_inventario + ' (disponible en Etapa 5)'"
+                      class="table-action-btn table-action-btn--active"
+                      (click)="abrirModalEstado(ejemplar)"
+                      [attr.aria-label]="'Cambiar estado del ejemplar ' + ejemplar.codigo_inventario"
                     >
                       Editar estado
                     </button>
@@ -240,7 +240,7 @@
       }
     </section>
 
-    <!-- Modal accesible para el registro de nuevos ejemplares físicos -->
+    <!-- ── Modal: Registrar nuevo ejemplar (Etapa 5) ──────────────────────── -->
     @if (modalRegistroAbierto()) {
       <div class="modal-backdrop" (click)="cerrarModalRegistro()">
         <div
@@ -342,6 +342,136 @@
           </div>
         </div>
       </div>
+    }
+
+    <!-- ── Modal: Cambiar estado de ejemplar (Etapa 6) ───────────────────── -->
+    @if (modalEstadoAbierto(); as _) {
+      @if (ejemplarSeleccionado(); as ej) {
+        <div
+          class="modal-backdrop"
+          (click)="cerrarModalEstado()"
+          role="presentation"
+        >
+          <div
+            class="modal-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="modal-estado-titulo"
+            (click)="$event.stopPropagation()"
+          >
+            <header class="modal-header">
+              <div>
+                <p class="modal-eyebrow">Control de ejemplares físicos</p>
+                <h3 id="modal-estado-titulo">Cambiar estado operativo</h3>
+              </div>
+              <button
+                id="btn-cerrar-modal-estado"
+                type="button"
+                class="btn-cerrar-modal"
+                (click)="cerrarModalEstado()"
+                [disabled]="cambiandoEstado()"
+                aria-label="Cerrar modal de cambio de estado"
+              >
+                ✕
+              </button>
+            </header>
+
+            <div class="modal-body">
+              <!-- Ficha del ejemplar -->
+              <div class="modal-book-summary">
+                <span class="summary-label">Ejemplar</span>
+                <div class="summary-title">
+                  <span class="inventory-code">{{ ej.codigo_inventario }}</span>
+                </div>
+                <div class="summary-meta-row">
+                  <span class="summary-isbn">{{ libro.titulo }}</span>
+                  <div class="summary-status-hint">
+                    <span class="summary-status-text">Estado actual:</span>
+                    <span
+                      class="status-badge"
+                      [ngClass]="obtenerClaseEstado(ej.estado)"
+                    >
+                      <span class="status-dot" aria-hidden="true"></span>
+                      {{ obtenerTextoEstado(ej.estado) }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Error del modal de estado -->
+              @if (errorCambioEstado()) {
+                <div class="modal-error" role="alert">
+                  {{ errorCambioEstado() }}
+                </div>
+              }
+
+              <!-- Selector de estado nuevo -->
+              <div class="estado-selector" role="group" aria-labelledby="estado-selector-label">
+                <p id="estado-selector-label" class="field-label">
+                  Nuevo estado <span class="required-mark">*</span>
+                </p>
+                <div class="estado-opciones">
+                  @for (opcion of estadosValidos; track opcion) {
+                    <button
+                      type="button"
+                      class="estado-opcion"
+                      [class.estado-opcion--seleccionado]="estadoNuevo() === opcion"
+                      [class.estado-opcion--igual]="opcion === ej.estado && estadoNuevo() === opcion"
+                      (click)="seleccionarEstadoNuevo(opcion)"
+                      [attr.aria-pressed]="estadoNuevo() === opcion"
+                      [attr.aria-label]="'Seleccionar estado ' + obtenerTextoEstado(opcion)"
+                    >
+                      <span
+                        class="status-badge"
+                        [ngClass]="obtenerClaseEstado(opcion)"
+                        aria-hidden="true"
+                      >
+                        <span class="status-dot"></span>
+                        {{ obtenerTextoEstado(opcion) }}
+                      </span>
+                      @if (opcion === ej.estado) {
+                        <span class="estado-actual-tag">actual</span>
+                      }
+                    </button>
+                  }
+                </div>
+                @if (estadoNuevo() === ej.estado) {
+                  <p class="field-hint estado-mismo-aviso" role="status">
+                    Selecciona un estado diferente al actual para confirmar el cambio.
+                  </p>
+                }
+              </div>
+
+              <!-- Acciones del modal -->
+              <div class="modal-actions">
+                <button
+                  id="btn-cancelar-cambio-estado"
+                  type="button"
+                  class="secondary-button"
+                  (click)="cerrarModalEstado()"
+                  [disabled]="cambiandoEstado()"
+                >
+                  Cancelar
+                </button>
+                <button
+                  id="btn-confirmar-cambio-estado"
+                  type="button"
+                  class="primary-button"
+                  (click)="onConfirmarCambioEstado()"
+                  [disabled]="!puedeConfirmarCambio()"
+                >
+                  @if (cambiandoEstado()) {
+                    <span class="btn-spinner" aria-hidden="true"></span>
+                    Guardando...
+                  } @else {
+                    Confirmar cambio
+                  }
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
     }
   }
 </section>

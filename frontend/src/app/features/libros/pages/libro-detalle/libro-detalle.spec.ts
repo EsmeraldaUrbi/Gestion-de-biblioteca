@@ -22,6 +22,7 @@ describe('LibroDetalleComponent', () => {
   let ejemplaresServiceMock: {
     listar: ReturnType<typeof vi.fn>;
     registrar: ReturnType<typeof vi.fn>;
+    cambiarEstado: ReturnType<typeof vi.fn>;
   };
   let router: Router;
 
@@ -78,6 +79,15 @@ describe('LibroDetalleComponent', () => {
           libro: { libro_id: 1, titulo: 'Cien Años de Soledad', isbn: '9780307474728' },
           codigo_inventario: 'CAS-004',
           estado: 'ACTIVO' as const,
+        }),
+      ),
+      cambiarEstado: vi.fn().mockReturnValue(
+        of({
+          ejemplar_id: 101,
+          libro_id: 1,
+          libro: { libro_id: 1, titulo: 'Cien Años de Soledad', isbn: '9780307474728' },
+          codigo_inventario: 'CAS-001',
+          estado: 'MANTENIMIENTO' as const,
         }),
       ),
     };
@@ -199,7 +209,7 @@ describe('LibroDetalleComponent', () => {
       expect(filas[2].querySelector('.badge--baja')).toBeTruthy();
     });
 
-    it('el botón de registrar ejemplar debe estar activo y los botones de cambiar estado deben estar deshabilitados (Etapa 6)', () => {
+    it('el botón de registrar ejemplar y los botones de editar estado deben estar activos (Etapa 6)', () => {
       fixture.detectChanges();
       const compiled = fixture.nativeElement as HTMLElement;
 
@@ -207,9 +217,11 @@ describe('LibroDetalleComponent', () => {
       expect(btnNuevo).toBeTruthy();
       expect(btnNuevo.disabled).toBe(false);
 
+      // Etapa 6: los botones de acción deben estar habilitados
       const btnAccion = compiled.querySelector('.table-action-btn') as HTMLButtonElement;
-      expect(btnAccion.disabled).toBe(true);
-      expect(btnAccion.getAttribute('title')).toContain('Etapa 5');
+      expect(btnAccion).toBeTruthy();
+      expect(btnAccion.disabled).toBeFalsy();
+      expect(btnAccion.classList.contains('table-action-btn--active')).toBe(true);
     });
 
     it('debe mostrar estado vacío cuando el libro no tenga ejemplares', () => {
@@ -664,6 +676,217 @@ describe('LibroDetalleComponent', () => {
         page_size: 10,
       });
       expect(component.paginaEjemplares()).toBe(2);
+    });
+  });
+
+  // ══════════════════════════════════════════════════════════════════════════
+  //  Etapa 6 — Cambio de estado operativo de ejemplares
+  // ══════════════════════════════════════════════════════════════════════════
+  describe('Cambio de estado operativo de ejemplares (Etapa 6)', () => {
+    const ejemplarActivo = mockEjemplares[0]; // CAS-001 ACTIVO
+    const ejemplarMantenimiento = mockEjemplares[1]; // CAS-002 MANTENIMIENTO
+    const ejemplarBaja = mockEjemplares[2]; // CAS-003 BAJA
+
+    beforeEach(async () => {
+      await configurarTestBed('1');
+      fixture.detectChanges();
+    });
+
+    it('E6-1. Apertura del modal: debe abrir el modal con el ejemplar seleccionado y su estado actual', () => {
+      component.abrirModalEstado(ejemplarActivo);
+      fixture.detectChanges();
+
+      expect(component.modalEstadoAbierto()).toBe(true);
+      expect(component.ejemplarSeleccionado()).toEqual(ejemplarActivo);
+      expect(component.estadoNuevo()).toBe('ACTIVO');
+
+      const modal = fixture.nativeElement.querySelector('.modal-dialog');
+      expect(modal).toBeTruthy();
+      expect(modal.textContent).toContain('CAS-001');
+      expect(modal.textContent).toContain('Activo');
+    });
+
+    it('E6-2. Cancelación: debe cerrar el modal sin enviar PATCH', () => {
+      component.abrirModalEstado(ejemplarActivo);
+      fixture.detectChanges();
+
+      const btnCancelar = fixture.nativeElement.querySelector('#btn-cancelar-cambio-estado') as HTMLButtonElement;
+      btnCancelar.click();
+      fixture.detectChanges();
+
+      expect(component.modalEstadoAbierto()).toBe(false);
+      expect(component.ejemplarSeleccionado()).toBeNull();
+      expect(ejemplaresServiceMock.cambiarEstado).not.toHaveBeenCalled();
+    });
+
+    it('E6-3. Selección de los tres estados: debe actualizar estadoNuevo correctamente', () => {
+      component.abrirModalEstado(ejemplarActivo);
+
+      component.seleccionarEstadoNuevo('MANTENIMIENTO');
+      expect(component.estadoNuevo()).toBe('MANTENIMIENTO');
+
+      component.seleccionarEstadoNuevo('BAJA');
+      expect(component.estadoNuevo()).toBe('BAJA');
+
+      component.seleccionarEstadoNuevo('ACTIVO');
+      expect(component.estadoNuevo()).toBe('ACTIVO');
+    });
+
+    it('E6-4. Rechazo del mismo estado: puedeConfirmarCambio debe ser false cuando el estado nuevo == actual', () => {
+      component.abrirModalEstado(ejemplarActivo); // ACTIVO
+      // estadoNuevo se inicializa en ACTIVO (igual al actual)
+      expect(component.puedeConfirmarCambio()).toBe(false);
+
+      component.seleccionarEstadoNuevo('MANTENIMIENTO');
+      expect(component.puedeConfirmarCambio()).toBe(true);
+
+      component.seleccionarEstadoNuevo('ACTIVO');
+      expect(component.puedeConfirmarCambio()).toBe(false);
+    });
+
+    it('E6-5. El botón Confirmar debe estar deshabilitado si el estado nuevo es igual al actual', () => {
+      component.abrirModalEstado(ejemplarActivo);
+      fixture.detectChanges();
+
+      const btnConfirmar = fixture.nativeElement.querySelector('#btn-confirmar-cambio-estado') as HTMLButtonElement;
+      expect(btnConfirmar.disabled).toBe(true);
+
+      component.seleccionarEstadoNuevo('BAJA');
+      fixture.detectChanges();
+      expect(btnConfirmar.disabled).toBe(false);
+    });
+
+    it('E6-6. Envío de PATCH únicamente con { estado }: no debe incluir libro_id ni codigo_inventario', () => {
+      component.abrirModalEstado(ejemplarActivo);
+      component.seleccionarEstadoNuevo('MANTENIMIENTO');
+
+      component.onConfirmarCambioEstado();
+
+      expect(ejemplaresServiceMock.cambiarEstado).toHaveBeenCalledWith(
+        ejemplarActivo.ejemplar_id,
+        { estado: 'MANTENIMIENTO' },
+      );
+      // No debe enviar libro_id ni codigo_inventario
+      const llamada = ejemplaresServiceMock.cambiarEstado.mock.calls[0][1] as Record<string, unknown>;
+      expect(llamada['libro_id']).toBeUndefined();
+      expect(llamada['codigo_inventario']).toBeUndefined();
+    });
+
+    it('E6-7. Éxito: debe cerrar el modal, mostrar banner de confirmación y actualizar la tabla', () => {
+      ejemplaresServiceMock.cambiarEstado.mockReturnValue(
+        of({ ...ejemplarActivo, estado: 'MANTENIMIENTO' as const }),
+      );
+
+      component.abrirModalEstado(ejemplarActivo);
+      component.seleccionarEstadoNuevo('MANTENIMIENTO');
+      component.onConfirmarCambioEstado();
+      fixture.detectChanges();
+
+      expect(component.modalEstadoAbierto()).toBe(false);
+      expect(component.mensajeExito()).toContain('CAS-001');
+      expect(component.mensajeExito()).toContain('Mantenimiento');
+      expect(ejemplaresServiceMock.listar).toHaveBeenCalled();
+    });
+
+    it('E6-8. Error 400 por préstamo activo: debe conservar el estado original y mostrar mensaje', () => {
+      ejemplaresServiceMock.cambiarEstado.mockReturnValue(
+        throwError(
+          () =>
+            new HttpErrorResponse({
+              status: 400,
+              error: { detail: 'No es posible cambiar el estado: el ejemplar tiene un préstamo activo.' },
+            }),
+        ),
+      );
+
+      component.abrirModalEstado(ejemplarActivo);
+      component.seleccionarEstadoNuevo('BAJA');
+      component.onConfirmarCambioEstado();
+      fixture.detectChanges();
+
+      // El modal permanece abierto
+      expect(component.modalEstadoAbierto()).toBe(true);
+      // El estado en la tabla no ha cambiado
+      expect(component.ejemplares()[0].estado).toBe('ACTIVO');
+      // Se muestra el error
+      expect(component.errorCambioEstado()).toContain('préstamo activo');
+    });
+
+    it('E6-9. Error 404 (ejemplar inexistente): debe mostrar mensaje adecuado', () => {
+      ejemplaresServiceMock.cambiarEstado.mockReturnValue(
+        throwError(() => new HttpErrorResponse({ status: 404 })),
+      );
+
+      component.abrirModalEstado(ejemplarBaja);
+      component.seleccionarEstadoNuevo('ACTIVO');
+      component.onConfirmarCambioEstado();
+
+      expect(component.errorCambioEstado()).toBe('El ejemplar ya no existe en el sistema.');
+      expect(component.modalEstadoAbierto()).toBe(true);
+    });
+
+    it('E6-10. Error de conexión (HTTP 0): debe mostrar mensaje de red sin cerrar el modal', () => {
+      ejemplaresServiceMock.cambiarEstado.mockReturnValue(
+        throwError(() => new HttpErrorResponse({ status: 0 })),
+      );
+
+      component.abrirModalEstado(ejemplarMantenimiento);
+      component.seleccionarEstadoNuevo('ACTIVO');
+      component.onConfirmarCambioEstado();
+
+      expect(component.errorCambioEstado()).toBe('No fue posible conectar con el servidor.');
+      expect(component.modalEstadoAbierto()).toBe(true);
+    });
+
+    it('E6-11. Prevención de doble envío: cambiandoEstado bloquea una segunda petición y el botón', () => {
+      component.abrirModalEstado(ejemplarActivo);
+      component.seleccionarEstadoNuevo('MANTENIMIENTO');
+      component.cambiandoEstado.set(true);
+      fixture.detectChanges();
+
+      const btnConfirmar = fixture.nativeElement.querySelector('#btn-confirmar-cambio-estado') as HTMLButtonElement;
+      expect(btnConfirmar.disabled).toBe(true);
+      expect(btnConfirmar.textContent).toContain('Guardando...');
+
+      ejemplaresServiceMock.cambiarEstado.mockClear();
+      component.onConfirmarCambioEstado();
+      expect(ejemplaresServiceMock.cambiarEstado).not.toHaveBeenCalled();
+
+      // Tampoco debe cerrar mientras se guarda
+      component.cerrarModalEstado();
+      expect(component.modalEstadoAbierto()).toBe(true);
+    });
+
+    it('E6-12. Paginación tras actualizar: debe respetar la página activa al recargar', () => {
+      component.paginaEjemplares.set(2);
+      component.totalEjemplares.set(25);
+
+      component.abrirModalEstado(ejemplarActivo);
+      component.seleccionarEstadoNuevo('BAJA');
+
+      ejemplaresServiceMock.listar.mockClear();
+      component.onConfirmarCambioEstado();
+
+      expect(ejemplaresServiceMock.listar).toHaveBeenCalledWith({
+        libro_id: 1,
+        page: 2,
+        page_size: 10,
+      });
+      expect(component.paginaEjemplares()).toBe(2);
+    });
+
+    it('E6-13. Apertura desde fila de la tabla: el botón Editar estado debe abrir el modal correcto', () => {
+      fixture.detectChanges();
+      const botonesEditar = fixture.nativeElement.querySelectorAll('.table-action-btn') as NodeListOf<HTMLButtonElement>;
+      expect(botonesEditar.length).toBe(3);
+
+      // Click en el botón del segundo ejemplar (MANTENIMIENTO)
+      botonesEditar[1].click();
+      fixture.detectChanges();
+
+      expect(component.modalEstadoAbierto()).toBe(true);
+      expect(component.ejemplarSeleccionado()?.codigo_inventario).toBe('CAS-002');
+      expect(component.ejemplarSeleccionado()?.estado).toBe('MANTENIMIENTO');
     });
   });
 });
