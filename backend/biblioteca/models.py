@@ -279,7 +279,9 @@ class Sancion(models.Model):
 
     monto = models.DecimalField(
         max_digits=10,
-        decimal_places=2
+        decimal_places=2,
+        null=True,
+        blank=True
     )
 
     fecha_pago = models.DateField(
@@ -296,6 +298,33 @@ class Sancion(models.Model):
         null=True,
         blank=True
     )
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                name='sancion_campos_por_tipo_ck',
+                condition=(
+                    models.Q(
+                        tipo='ECONOMICA',
+                        monto__isnull=False,
+                        monto__gt=0,
+                        fecha_inicio_bloqueo__isnull=True,
+                        fecha_fin_bloqueo__isnull=True,
+                    )
+                    |
+                    models.Q(
+                        tipo='BLOQUEO',
+                        monto__isnull=True,
+                        fecha_pago__isnull=True,
+                        fecha_inicio_bloqueo__isnull=False,
+                        fecha_fin_bloqueo__isnull=False,
+                        fecha_fin_bloqueo__gte=models.F(
+                            'fecha_inicio_bloqueo'
+                        ),
+                    )
+                ),
+            ),
+        ]
 
     def __str__(self):
         return (

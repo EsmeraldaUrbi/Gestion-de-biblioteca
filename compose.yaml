@@ -19,6 +19,8 @@ services:
     restart: always
     env_file:
       - .env
+    environment:
+      DJANGO_TIME_ZONE: ${DJANGO_TIME_ZONE:-America/Mexico_City}
     volumes:
       - ./backend:/app
     ports:
@@ -41,6 +43,19 @@ services:
       - backend
     # Mantiene el contenedor vivo mientras inicializamos Angular
     command: ng serve --host 0.0.0.0 --poll 2000
-      
+
+  bloqueos_worker:
+    build: ./backend
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      DJANGO_TIME_ZONE: ${DJANGO_TIME_ZONE:-America/Mexico_City}
+    volumes:
+      - ./backend:/app
+    depends_on:
+      - db
+    command: python manage.py vigilar_bloqueos --intervalo-segundos 3600
+
 volumes:
   mysql_data:

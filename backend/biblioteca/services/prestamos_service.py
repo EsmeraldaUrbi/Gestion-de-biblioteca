@@ -12,11 +12,15 @@ from biblioteca.models import (
     Sancion,
     Usuario,
 )
+
 from biblioteca.repositories.prestamos_repository import (
     DjangoPrestamoRepository,
     IPrestamoRepository,
 )
 
+from biblioteca.services.bloqueos_service import (
+    BloqueosService,
+)
 
 class PrestamoError(Exception):
     """
@@ -326,10 +330,22 @@ class PrestamoService:
             )
 
         # 6. Bloqueos temporales vigentes.
-        if self.repository.tiene_bloqueo_vigente(
-            usuario.usuario_id,
-            fecha_actual
-        ):
+        bloqueo_registrado = (
+            self.repository.tiene_bloqueo_vigente(
+                usuario.usuario_id,
+                fecha_actual
+            )
+        )
+
+        bloqueo_por_atraso = (
+            BloqueosService()
+            .tiene_bloqueo_por_atraso_vigente(
+                usuario.usuario_id,
+                fecha_actual
+            )
+        )
+
+        if bloqueo_registrado or bloqueo_por_atraso:
             raise BloqueoVigenteError(
                 'El usuario tiene un bloqueo temporal vigente.'
             )
@@ -444,6 +460,14 @@ class PrestamoService:
         self._validar_id(
             ejemplar_id,
             'ejemplar_id'
+        )
+        # Registrar cualquier bloqueo pendiente del usuario.
+        # Esta operacion termina antes de iniciar la
+        # transaccion del nuevo prestamo, para que el
+        # rechazo posterior no revierta la sancion.
+        BloqueosService().aplicar_bloqueos_usuario(
+            usuario_id=usuario_id,
+            fecha_actual=timezone.localdate()
         )
 
         with transaction.atomic():

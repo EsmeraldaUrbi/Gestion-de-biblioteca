@@ -718,7 +718,7 @@ class PrestamosApiTests(APITestCase):
 
         Sancion.objects.create(
             prestamo=anterior,
-            tipo='MULTA',
+            tipo='ECONOMICA',
             monto=Decimal('25.00'),
             fecha_pago=None
         )
@@ -749,7 +749,7 @@ class PrestamosApiTests(APITestCase):
         Sancion.objects.create(
             prestamo=anterior,
             tipo='BLOQUEO',
-            monto=Decimal('0.00'),
+            monto=None,
             fecha_inicio_bloqueo=date(2020, 1, 1),
             fecha_fin_bloqueo=date(2099, 1, 1)
         )

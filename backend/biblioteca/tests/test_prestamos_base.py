@@ -311,7 +311,7 @@ class PrestamosBaseTests(TestCase):
     def test_listar_sanciones_de_un_usuario(self):
         sancion = Sancion.objects.create(
             prestamo=self.prestamo_activo,
-            tipo='MULTA',
+            tipo='ECONOMICA',
             monto=Decimal('25.00')
         )
 
@@ -335,7 +335,7 @@ class PrestamosBaseTests(TestCase):
     def test_detectar_adeudo_pendiente(self):
         Sancion.objects.create(
             prestamo=self.prestamo_activo,
-            tipo='MULTA',
+            tipo='ECONOMICA',
             monto=Decimal('25.00'),
             fecha_pago=None
         )
@@ -355,7 +355,7 @@ class PrestamosBaseTests(TestCase):
     def test_multa_pagada_no_es_adeudo(self):
         Sancion.objects.create(
             prestamo=self.prestamo_activo,
-            tipo='MULTA',
+            tipo='ECONOMICA',
             monto=Decimal('25.00'),
             fecha_pago=date(2026, 10, 10)
         )
@@ -370,8 +370,10 @@ class PrestamosBaseTests(TestCase):
         Sancion.objects.create(
             prestamo=self.prestamo_activo,
             tipo='BLOQUEO',
-            monto=Decimal('0.00'),
-            fecha_pago=None
+            monto=None,
+            fecha_pago=None,
+            fecha_inicio_bloqueo=date(2026, 10, 10),
+            fecha_fin_bloqueo=date(2026, 11, 8)
         )
 
         self.assertFalse(
@@ -388,7 +390,7 @@ class PrestamosBaseTests(TestCase):
         Sancion.objects.create(
             prestamo=self.prestamo_activo,
             tipo='BLOQUEO',
-            monto=Decimal('0.00'),
+            monto=None,
             fecha_inicio_bloqueo=date(2026, 10, 10),
             fecha_fin_bloqueo=date(2026, 10, 20)
         )
@@ -411,7 +413,7 @@ class PrestamosBaseTests(TestCase):
         Sancion.objects.create(
             prestamo=self.prestamo_activo,
             tipo='BLOQUEO',
-            monto=Decimal('0.00'),
+            monto=None,
             fecha_inicio_bloqueo=date(2026, 10, 10),
             fecha_fin_bloqueo=date(2026, 10, 20)
         )
@@ -434,7 +436,7 @@ class PrestamosBaseTests(TestCase):
         Sancion.objects.create(
             prestamo=self.prestamo_activo,
             tipo='BLOQUEO',
-            monto=Decimal('0.00'),
+            monto=None,
             fecha_inicio_bloqueo=date(2026, 9, 1),
             fecha_fin_bloqueo=date(2026, 9, 30)
         )

@@ -428,7 +428,7 @@ class PrestamoReglasTests(
 
         Sancion.objects.create(
             prestamo=prestamo_previo,
-            tipo='MULTA',
+            tipo='ECONOMICA',
             monto=Decimal('25.00'),
             fecha_pago=None
         )
@@ -459,7 +459,7 @@ class PrestamoReglasTests(
 
         Sancion.objects.create(
             prestamo=prestamo_previo,
-            tipo='MULTA',
+            tipo='ECONOMICA',
             monto=Decimal('25.00'),
             fecha_pago=date(2026, 10, 12)
         )
@@ -491,7 +491,7 @@ class PrestamoReglasTests(
         Sancion.objects.create(
             prestamo=prestamo_previo,
             tipo='BLOQUEO',
-            monto=Decimal('0.00'),
+            monto=None,
             fecha_inicio_bloqueo=date(2020, 1, 1),
             fecha_fin_bloqueo=date(2099, 1, 1)
         )
@@ -518,7 +518,7 @@ class PrestamoReglasTests(
         Sancion.objects.create(
             prestamo=prestamo_previo,
             tipo='BLOQUEO',
-            monto=Decimal('0.00'),
+            monto=None,
             fecha_inicio_bloqueo=date(2020, 1, 1),
             fecha_fin_bloqueo=date(2020, 1, 15)
         )
