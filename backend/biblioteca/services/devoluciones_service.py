@@ -45,6 +45,52 @@ class DevolucionService:
             else DjangoDevolucionesRepository()
         )
 
+    def buscar_prestamos_activos(self, termino: str):
+        """Consulta préstamos activos sin modificar registros."""
+        if not isinstance(termino, str):
+            raise DatosDevolucionInvalidosError(
+                'El término de búsqueda debe ser texto.'
+            )
+
+        termino = termino.strip()
+
+        if not termino:
+            raise DatosDevolucionInvalidosError(
+                'Escribe un código de inventario, '
+                'ID de préstamo, nombre o correo.'
+            )
+
+        if len(termino) > 100:
+            raise DatosDevolucionInvalidosError(
+                'La búsqueda no puede exceder 100 caracteres.'
+            )
+
+        return self.repository.buscar_prestamos_activos(
+            termino=termino
+        )
+
+    def estimar_devolucion(
+        self,
+        prestamo,
+        fecha_referencia: date
+    ) -> dict:
+        """Calcula una estimación sin guardar cambios."""
+        dias_retraso = max(
+            (fecha_referencia - prestamo.fecha_limite).days,
+            0
+        )
+
+        monto = (
+            self.TARIFA_DIARIA * dias_retraso
+        ).quantize(Decimal('0.01'))
+
+        return {
+            'prestamo': prestamo,
+            'fecha_referencia': fecha_referencia,
+            'dias_retraso': dias_retraso,
+            'monto_multa': format(monto, '.2f'),
+        }
+
     def registrar_devolucion(
         self,
         prestamo_id: int,

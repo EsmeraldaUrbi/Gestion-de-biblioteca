@@ -293,3 +293,84 @@ class DevolucionesTests(TestCase):
             Sancion.objects.filter(prestamo=prestamo).count(),
             2
         )
+
+    def test_busqueda_encuentra_prestamo_activo_y_estima_multa(self):
+        prestamo = self.crear_prestamo(dias_retraso=5)
+
+        respuesta = self.client.get(
+            reverse('devoluciones-prestamos-activos'),
+            {'q': self.ejemplar.codigo_inventario}
+        )
+
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertEqual(respuesta.data['count'], 1)
+
+        resultado = respuesta.data['results'][0]
+
+        self.assertEqual(
+            resultado['prestamo']['prestamo_id'],
+            prestamo.prestamo_id
+        )
+        self.assertEqual(resultado['dias_retraso'], 5)
+        self.assertEqual(resultado['monto_multa'], '25.00')
+
+        # Consultar no debe registrar la devolución ni sanciones.
+        prestamo.refresh_from_db()
+        self.assertIsNone(prestamo.fecha_devolucion)
+        self.assertFalse(
+            Sancion.objects.filter(prestamo=prestamo).exists()
+        )
+
+    def test_busqueda_excluye_prestamos_devueltos(self):
+        prestamo = self.crear_prestamo()
+        prestamo.fecha_devolucion = self.hoy
+        prestamo.save(update_fields=['fecha_devolucion'])
+
+        respuesta = self.client.get(
+            reverse('devoluciones-prestamos-activos'),
+            {'q': self.ejemplar.codigo_inventario}
+        )
+
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertEqual(respuesta.data['count'], 0)
+        self.assertEqual(respuesta.data['results'], [])
+
+    def test_busqueda_por_nombre_correo_e_id(self):
+        prestamo = self.crear_prestamo()
+
+        for termino in [
+            self.lector.nombre,
+            self.lector.email,
+            str(prestamo.prestamo_id),
+        ]:
+            with self.subTest(termino=termino):
+                respuesta = self.client.get(
+                    reverse('devoluciones-prestamos-activos'),
+                    {'q': termino}
+                )
+
+                self.assertEqual(respuesta.status_code, 200)
+                self.assertEqual(respuesta.data['count'], 1)
+                self.assertEqual(
+                    respuesta.data['results'][0]
+                    ['prestamo']['prestamo_id'],
+                    prestamo.prestamo_id
+                )
+
+    def test_busqueda_rechaza_termino_vacio(self):
+        respuesta = self.client.get(
+            reverse('devoluciones-prestamos-activos'),
+            {'q': '   '}
+        )
+
+        self.assertEqual(respuesta.status_code, 400)
+
+    def test_estudiante_no_puede_buscar_devoluciones(self):
+        self.client.force_authenticate(user=self.lector)
+
+        respuesta = self.client.get(
+            reverse('devoluciones-prestamos-activos'),
+            {'q': 'DEV'}
+        )
+
+        self.assertEqual(respuesta.status_code, 403)

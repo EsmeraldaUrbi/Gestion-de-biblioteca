@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 from datetime import date
 from decimal import Decimal
 from typing import Optional
+from django.db.models import Q, QuerySet
 
 from biblioteca.models import Ejemplar, Prestamo, Sancion, Usuario
 
@@ -51,6 +52,13 @@ class IDevolucionesRepository(ABC):
         prestamo_id: int,
         monto: Decimal
     ) -> Sancion:
+        pass
+
+    @abstractmethod
+    def buscar_prestamos_activos(
+        self,
+        termino: str
+    ) -> QuerySet[Prestamo]:
         pass
 
 
@@ -120,4 +128,34 @@ class DjangoDevolucionesRepository(IDevolucionesRepository):
             fecha_pago=None,
             fecha_inicio_bloqueo=None,
             fecha_fin_bloqueo=None
+        )
+
+    def buscar_prestamos_activos(
+        self,
+        termino: str
+    ) -> QuerySet[Prestamo]:
+        filtros = (
+            Q(ejemplar__codigo_inventario__icontains=termino)
+            | Q(usuario__nombre__icontains=termino)
+            | Q(usuario__email__icontains=termino)
+        )
+
+        # Si el término es numérico, también busca por ID.
+        # Limitarlo a diez dígitos evita enviar enteros
+        # excesivamente grandes a MySQL.
+        if termino.isascii() and termino.isdecimal():
+            if len(termino) <= 10:
+                filtros |= Q(prestamo_id=int(termino))
+
+        return (
+            Prestamo.objects
+            .select_related(
+                'usuario',
+                'usuario__rol',
+                'ejemplar',
+                'ejemplar__libro'
+            )
+            .filter(fecha_devolucion__isnull=True)
+            .filter(filtros)
+            .order_by('fecha_limite', 'prestamo_id')
         )

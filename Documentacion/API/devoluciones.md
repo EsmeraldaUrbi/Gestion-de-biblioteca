@@ -13,6 +13,7 @@
 | Método | Ruta | Descripción | Roles |
 |---|---|---|---|
 | POST | `/api/prestamos/{prestamo_id}/devolucion/` | Registrar devolución física y calcular multa por retraso | bibliotecario |
+| GET | `/api/devoluciones/prestamos-activos/` | Consultar préstamos activos y estimar multa | bibliotecario |
 
 ## Detalle de operaciones
 
@@ -21,6 +22,25 @@
 **Propósito:**
 
 Registrar la fecha real de devolución de un ejemplar prestado y generar automáticamente una sanción ECONOMICA cuando exista retraso. El estado operativo del ejemplar se conserva; vuelve a estar disponible si permanece ACTIVO y ya no tiene un préstamo activo.
+
+### GET `/api/devoluciones/prestamos-activos/`
+
+**Propósito:**
+Consulta préstamos activos y estima la multa, sin modificar registros.
+
+- Rol permitido: bibliotecario.
+- Autenticación: Bearer token.
+- Parámetro obligatorio: `q`, texto de 1 a 100 caracteres.
+- Busca por código de inventario, nombre, correo o ID de préstamo.
+- Paginación: `page` (predeterminado 1) y `page_size`
+  (predeterminado 10, máximo 100).
+- Respuesta 200: `count`, `next`, `previous` y `results`.
+- Cada resultado incluye `prestamo`, `fecha_referencia`,
+  `dias_retraso` y `monto_multa`.
+- Sin coincidencias: respuesta 200 con `results: []`.
+- Errores: 400 por parámetros inválidos, 401 sin autenticación,
+  403 sin rol bibliotecario y 404 por página inexistente.
+- La estimación se recalcula al confirmar la devolución.
 
 **Autenticación y autorización:**
 
@@ -101,7 +121,8 @@ docker compose exec backend python manage.py test biblioteca.tests.test_devoluci
 ```
 
 - Resultado verificado:
-  1. Nueve pruebas de devoluciones ejecutadas correctamente en MySQL. Suite completa del backend: 252 pruebas correctas. Pendiente de verificar solicitudes simultáneas e integración con Angular.
+  
+  1. Pruebas del módulo: 14 ejecutadas correctamente en MySQL. Suite completa del backend: 257 pruebas correctas. Pendiente de verificar solicitudes simultáneas e integración con Angular.
 
 ## Dependencias y pendientes
 

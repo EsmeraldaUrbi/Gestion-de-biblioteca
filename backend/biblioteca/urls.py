@@ -57,6 +57,12 @@ from biblioteca.presentation.devoluciones_views import (
     DevolucionRegistroView,
 )
 
+# 3.6 Registro de devoluciones.
+from biblioteca.presentation.devoluciones_views import (
+    DevolucionRegistroView,
+    PrestamosActivosDevolucionView,
+)
+
 
 urlpatterns = [
     # -----------------------------------------
@@ -215,5 +221,11 @@ urlpatterns = [
         'prestamos/<int:prestamo_id>/devolucion/',
         DevolucionRegistroView.as_view(),
         name='prestamos-devolucion'
+    ),
+
+    path(
+        'devoluciones/prestamos-activos/',
+        PrestamosActivosDevolucionView.as_view(),
+        name='devoluciones-prestamos-activos'
     ),
 ]
