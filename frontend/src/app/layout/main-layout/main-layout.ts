@@ -97,6 +97,7 @@ export class MainLayoutComponent implements OnInit {
     },
     {
       label: 'Devoluciones',
+      route: '/devoluciones',
       roles: ['bibliotecario'],
       icon: 'returns',
     },

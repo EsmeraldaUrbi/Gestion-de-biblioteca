@@ -79,6 +79,15 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'devoluciones',
+        canActivate: [roleGuard],
+        data: { roles: ['bibliotecario'] },
+        loadComponent: () =>
+          import('./features/prestamos/pages/registro-devolucion/registro-devolucion').then(
+            (module) => module.RegistroDevolucionComponent,
+          ),
+      },
+      {
         path: 'usuarios/nuevo',
         canActivate: [roleGuard],
         data: { roles: ['bibliotecario'] },

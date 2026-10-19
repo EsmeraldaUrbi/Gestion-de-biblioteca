@@ -1,0 +1,331 @@
+<section class="devolucion-page">
+    <header class="page-header">
+        <span class="eyebrow">MÓDULO DE CIRCULACIÓN</span>
+        <h1>Registro de devoluciones y cálculo de multas</h1>
+        <p>
+        Localiza el préstamo, verifica el retraso y confirma
+        la recepción física del ejemplar.
+        </p>
+    </header>
+
+    @if (devolucion(); as registro) {
+        <section class="card success-card" aria-labelledby="titulo-exito">
+        <div class="success-icon" aria-hidden="true">✓</div>
+        <span class="eyebrow">RECEPCIÓN FÍSICA CONFIRMADA</span>
+        <h2 id="titulo-exito">Devolución registrada</h2>
+        <p role="status">{{ registro.mensaje }}</p>
+
+        @if (seleccionado(); as resultado) {
+            <div class="book-summary">
+            <span class="eyebrow">EJEMPLAR PROCESADO</span>
+            <h3>{{ resultado.prestamo.ejemplar.libro.titulo }}</h3>
+            <p>
+                Código:
+                <strong>
+                {{ resultado.prestamo.ejemplar.codigo_inventario }}
+                </strong>
+            </p>
+            <p>Usuario: {{ resultado.prestamo.usuario.nombre }}</p>
+            </div>
+        }
+
+        <dl class="details-grid">
+            <div>
+            <dt>Préstamo</dt>
+            <dd>#{{ registro.prestamo_id }}</dd>
+            </div>
+            <div>
+            <dt>Fecha de devolución</dt>
+            <dd>{{ formatearFecha(registro.fecha_devolucion) }}</dd>
+            </div>
+            <div>
+            <dt>Días de retraso</dt>
+            <dd>{{ registro.dias_retraso }}</dd>
+            </div>
+            <div>
+            <dt>Multa de esta devolución</dt>
+            <dd>${{ registro.monto_multa }} MXN</dd>
+            </div>
+        </dl>
+
+        @if (registro.sancion_generada) {
+            <p class="notice notice-warning">
+            Se registró la multa #{{ registro.sancion_id }}
+            como pendiente de pago. Su liquidación se realiza
+            en el módulo de sanciones.
+            </p>
+        } @else {
+            <p class="notice notice-success">
+            Esta devolución no generó una multa.
+            Esto no modifica otros adeudos o bloqueos del usuario.
+            </p>
+        }
+
+        <p class="notice">
+            @if (registro.ejemplar_estado === 'ACTIVO') {
+            Al registrarse la devolución, el ejemplar quedó
+            disponible para un nuevo préstamo.
+            } @else {
+            El ejemplar conserva su estado
+            {{ registro.ejemplar_estado }} y no está disponible
+            para préstamo.
+            }
+        </p>
+
+        <button
+            type="button"
+            class="button button-primary"
+            (click)="nuevaDevolucion()"
+        >
+            Registrar nueva devolución
+        </button>
+        </section>
+    } @else {
+        <section class="card search-card" aria-labelledby="titulo-busqueda">
+        <h2 id="titulo-busqueda">Localizar préstamo activo</h2>
+
+        <form
+            (submit)="$event.preventDefault(); buscar()"
+            class="search-form"
+        >
+            <label for="busqueda-devolucion">
+            Código de inventario, ID de préstamo, nombre o correo
+            </label>
+
+            <div class="search-row">
+            <input
+                id="busqueda-devolucion"
+                type="text"
+                class="text-input"
+                [formControl]="busqueda"
+                [readonly]="registrando()"
+                maxlength="100"
+                placeholder="Ejemplo: LIB-001 o correo del usuario"
+            />
+
+            <button
+                type="submit"
+                class="button button-primary"
+                [disabled]="buscando() || registrando()"
+            >
+                {{ buscando() ? 'Buscando...' : 'Buscar préstamo' }}
+            </button>
+            </div>
+        </form>
+
+        @if (errorBusqueda(); as mensaje) {
+            <p class="notice notice-error" role="alert">{{ mensaje }}</p>
+        }
+
+        @if (buscando()) {
+            <p class="empty-message" role="status">
+            Consultando préstamos activos...
+            </p>
+        }
+
+        @if (busquedaRealizada()) {
+            @if (resultados().length === 0) {
+            <p class="empty-message" role="status">
+                No se encontraron préstamos activos con esa búsqueda.
+            </p>
+            } @else {
+            <p class="results-count">
+                {{ total() }} préstamo(s) encontrado(s).
+                Selecciona el ejemplar que estás recibiendo.
+            </p>
+
+            <div class="results-list">
+                @for (resultado of resultados(); track resultado.prestamo.prestamo_id) {
+                <button
+                    type="button"
+                    class="result-item"
+                    [class.result-item-selected]="
+                    seleccionado()?.prestamo?.prestamo_id ===
+                    resultado.prestamo.prestamo_id
+                    "
+                    [attr.aria-pressed]="
+                    seleccionado()?.prestamo?.prestamo_id ===
+                    resultado.prestamo.prestamo_id
+                    "
+                    [disabled]="registrando()"
+                    (click)="seleccionar(resultado)"
+                >
+                    <span class="result-information">
+                    <strong>
+                        {{ resultado.prestamo.ejemplar.libro.titulo }}
+                    </strong>
+                    <span>
+                        {{ resultado.prestamo.ejemplar.codigo_inventario }}
+                        · Préstamo #{{ resultado.prestamo.prestamo_id }}
+                    </span>
+                    <span>{{ resultado.prestamo.usuario.nombre }}</span>
+                    </span>
+
+                    <span
+                    class="status-chip"
+                    [class.status-chip-late]="resultado.dias_retraso > 0"
+                    >
+                    @if (resultado.dias_retraso > 0) {
+                        {{ resultado.dias_retraso }} día(s) de retraso
+                    } @else {
+                        Dentro del plazo
+                    }
+                    </span>
+                </button>
+                }
+            </div>
+
+            <nav class="pagination" aria-label="Páginas de resultados">
+                <button
+                type="button"
+                class="button button-secondary"
+                [disabled]="!hayAnterior() || buscando() || registrando()"
+                (click)="paginaAnterior()"
+                >
+                Anterior
+                </button>
+                <span>Página {{ pagina() }}</span>
+                <button
+                type="button"
+                class="button button-secondary"
+                [disabled]="!haySiguiente() || buscando() || registrando()"
+                (click)="paginaSiguiente()"
+                >
+                Siguiente
+                </button>
+            </nav>
+            }
+        }
+        </section>
+
+        @if (seleccionado(); as resultado) {
+        <section
+            class="card loan-card"
+            [class.loan-card-late]="resultado.dias_retraso > 0"
+            aria-labelledby="titulo-prestamo"
+        >
+            <div class="loan-heading">
+            <span
+                class="status-chip"
+                [class.status-chip-late]="resultado.dias_retraso > 0"
+            >
+                @if (resultado.dias_retraso > 0) {
+                Retraso en devolución detectado
+                } @else {
+                Devolución dentro del plazo
+                }
+            </span>
+            <span>Préstamo #{{ resultado.prestamo.prestamo_id }}</span>
+            </div>
+
+            <div class="book-summary">
+            <span class="eyebrow">EJEMPLAR SELECCIONADO</span>
+            <h2 id="titulo-prestamo">
+                {{ resultado.prestamo.ejemplar.libro.titulo }}
+            </h2>
+            <p>
+                Código:
+                <strong>
+                {{ resultado.prestamo.ejemplar.codigo_inventario }}
+                </strong>
+                · ISBN: {{ resultado.prestamo.ejemplar.libro.isbn }}
+            </p>
+            <p>
+                Usuario:
+                <strong>{{ resultado.prestamo.usuario.nombre }}</strong>
+                · {{ resultado.prestamo.usuario.rol.nombre }}
+            </p>
+            <p>{{ resultado.prestamo.usuario.email }}</p>
+            </div>
+
+            <dl class="dates-grid">
+            <div>
+                <dt>Fecha de préstamo</dt>
+                <dd>
+                {{ formatearFecha(resultado.prestamo.fecha_prestamo) }}
+                </dd>
+            </div>
+            <div>
+                <dt>Fecha límite</dt>
+                <dd>
+                {{ formatearFecha(resultado.prestamo.fecha_limite) }}
+                </dd>
+            </div>
+            <div>
+                <dt>Fecha de la estimación</dt>
+                <dd>
+                {{ formatearFecha(resultado.fecha_referencia) }}
+                </dd>
+            </div>
+            </dl>
+
+            <div
+            class="fine-summary"
+            [class.fine-summary-late]="resultado.dias_retraso > 0"
+            >
+            <div>
+                <h3>
+                {{ resultado.dias_retraso }} día(s) naturales de retraso
+                </h3>
+                <p>Tarifa: $5.00 MXN por día y por ejemplar.</p>
+            </div>
+            <div class="fine-amount">
+                <span>Multa estimada</span>
+                <strong>${{ resultado.monto_multa }} MXN</strong>
+            </div>
+            </div>
+
+            <p class="notice">
+            La fecha y el importe definitivos se calculan en el servidor
+            al confirmar. Las multas y los bloqueos existentes
+            no impiden recibir el ejemplar.
+            </p>
+
+            @if (confirmarAbierto()) {
+            <section class="confirmation" aria-labelledby="titulo-confirmacion">
+                <h3 id="titulo-confirmacion">Confirmar recepción física</h3>
+                <p>
+                ¿Recibiste el ejemplar
+                <strong>
+                    {{ resultado.prestamo.ejemplar.codigo_inventario }}
+                </strong>
+                correspondiente al préstamo
+                #{{ resultado.prestamo.prestamo_id }}?
+                </p>
+
+                <div class="actions">
+                <button
+                    type="button"
+                    class="button button-secondary"
+                    [disabled]="registrando()"
+                    (click)="cancelarConfirmacion()"
+                >
+                    Cancelar
+                </button>
+                <button
+                    type="button"
+                    class="button button-primary"
+                    [disabled]="registrando()"
+                    (click)="confirmarDevolucion()"
+                >
+                    {{ registrando() ? 'Registrando...' : 'Sí, registrar devolución' }}
+                </button>
+                </div>
+            </section>
+            } @else {
+            <button
+                type="button"
+                class="button button-primary confirm-button"
+                (click)="solicitarConfirmacion()"
+            >
+                Confirmar devolución
+            </button>
+            }
+        </section>
+        }
+
+        @if (errorRegistro(); as mensaje) {
+        <p class="notice notice-error" role="alert">{{ mensaje }}</p>
+        }
+    }
+</section>
