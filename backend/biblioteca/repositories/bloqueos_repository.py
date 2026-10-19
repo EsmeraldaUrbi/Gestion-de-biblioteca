@@ -62,6 +62,14 @@ class IBloqueosRepository(ABC):
     ) -> Sancion:
         pass
 
+    @abstractmethod
+    def listar_bloqueos_vigentes_usuario(
+        self,
+        usuario_id: int,
+        fecha_actual: date
+    ) -> list[Sancion]:
+        pass
+
 
 class DjangoBloqueosRepository(IBloqueosRepository):
     """
@@ -169,4 +177,21 @@ class DjangoBloqueosRepository(IBloqueosRepository):
             fecha_pago=None,
             fecha_inicio_bloqueo=fecha_inicio,
             fecha_fin_bloqueo=fecha_fin
+        )
+
+    def listar_bloqueos_vigentes_usuario(
+        self,
+        usuario_id: int,
+        fecha_actual: date
+    ) -> list[Sancion]:
+        return list(
+            Sancion.objects.filter(
+                prestamo__usuario_id=usuario_id,
+                tipo='BLOQUEO',
+                fecha_inicio_bloqueo__lte=fecha_actual,
+                fecha_fin_bloqueo__gte=fecha_actual
+            ).order_by(
+                'fecha_fin_bloqueo',
+                'sancion_id'
+            )
         )

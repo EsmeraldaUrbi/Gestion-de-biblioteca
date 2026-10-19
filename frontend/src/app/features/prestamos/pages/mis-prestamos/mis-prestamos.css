@@ -265,6 +265,71 @@
   background: #eef3fd;
 }
 
+.account-blocks {
+  display: grid;
+  gap: 12px;
+  padding: 15px;
+  border: 1px solid #f0c8c8;
+  border-radius: 10px;
+  background: #fff5f5;
+}
+
+.account-blocks h3 {
+  margin: 0;
+  color: #9b2833;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.account-blocks-intro {
+  margin: 0;
+  color: #79545b;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.account-block {
+  padding: 12px;
+  border: 1px solid #f1d4d4;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.account-block > strong {
+  color: #97303b;
+  font-size: 12px;
+}
+
+.account-block > p {
+  margin: 6px 0 12px;
+  color: #5f6675;
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.account-block-dates {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.account-block-dates > div {
+  display: grid;
+  gap: 4px;
+}
+
+.account-block-dates small {
+  color: #8c6470;
+  font-size: 9px;
+  font-weight: 750;
+}
+
+.account-block-dates span {
+  color: #92313c;
+  font-size: 12px;
+  font-weight: 750;
+}
+
 .note-icon {
   color: #126bd9;
   font-size: 16px;

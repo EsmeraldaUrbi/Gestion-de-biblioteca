@@ -951,6 +951,35 @@
   color: #ad3038;
 }
 
+.bloqueos-detalle {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #edb6b6;
+}
+
+.bloqueos-detalle > strong {
+  margin-bottom: 10px;
+  color: #922630;
+}
+
+.bloqueo-item {
+  padding: 10px 12px;
+  margin-top: 8px;
+  border: 1px solid #f0c8c8;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.bloqueo-item strong {
+  color: #922630;
+}
+
+.bloqueo-item p {
+  margin-top: 5px;
+  color: #65515a;
+  line-height: 1.5;
+}
+
 .validation-box--error .validation-icon {
   background: #d94d55;
   color: #ffffff;

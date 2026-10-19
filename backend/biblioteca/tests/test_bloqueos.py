@@ -20,6 +20,9 @@ from biblioteca.services.prestamos_service import (
     PrestamoService,
 )
 
+from django.urls import reverse
+from rest_framework.test import APIClient
+
 
 class BloqueosServiceTests(TestCase):
     """
@@ -554,3 +557,166 @@ class BloqueosServiceTests(TestCase):
             ).count(),
             1
         )
+
+    def test_consultar_bloqueo_registrado_con_fechas(self):
+        prestamo = self.crear_prestamo(
+            fecha_limite=date(2026, 9, 15)
+        )
+
+        self.service.aplicar_bloqueos(self.hoy)
+
+        bloqueos = (
+            self.service.obtener_bloqueos_vigentes_usuario(
+                self.usuario.usuario_id,
+                self.hoy
+            )
+        )
+
+        self.assertEqual(len(bloqueos), 1)
+        self.assertEqual(
+            bloqueos[0]['prestamo_id'],
+            prestamo.prestamo_id
+        )
+        self.assertEqual(
+            bloqueos[0]['fecha_inicio'],
+            date(2026, 10, 15)
+        )
+        self.assertEqual(
+            bloqueos[0]['fecha_fin'],
+            date(2026, 11, 13)
+        )
+
+    def test_consultar_bloqueo_pendiente_sin_crearlo(self):
+        self.crear_prestamo(
+            fecha_limite=date(2026, 9, 15)
+        )
+
+        bloqueos = (
+            self.service.obtener_bloqueos_vigentes_usuario(
+                self.usuario.usuario_id,
+                self.hoy
+            )
+        )
+
+        self.assertEqual(len(bloqueos), 1)
+        self.assertEqual(
+            bloqueos[0]['fecha_inicio'],
+            date(2026, 10, 15)
+        )
+        self.assertEqual(
+            bloqueos[0]['fecha_fin'],
+            date(2026, 11, 13)
+        )
+
+        # La consulta no registra sanciones.
+        self.assertFalse(Sancion.objects.exists())
+
+    def test_api_elegibilidad_informa_fechas_bloqueo(self):
+        self.crear_prestamo(
+            fecha_limite=date(2026, 9, 15)
+        )
+
+        ejemplar_libre = self.crear_ejemplar()
+
+        rol_bibliotecario = Rol.objects.create(
+            nombre='bibliotecario',
+            limite_prestamos_activos=0
+        )
+
+        bibliotecario = Usuario.objects.create(
+            rol=rol_bibliotecario,
+            nombre='Bibliotecario de prueba',
+            email='bibliotecario-bloqueos@test.local'
+        )
+
+        cliente = APIClient()
+        cliente.force_authenticate(
+            user=bibliotecario
+        )
+
+        with patch(
+            'biblioteca.services.prestamos_service.timezone.localdate',
+            return_value=self.hoy
+        ):
+            respuesta = cliente.get(
+                reverse('prestamos-elegibilidad'),
+                {
+                    'usuario_id': self.usuario.usuario_id,
+                    'ejemplar_id': ejemplar_libre.ejemplar_id,
+                }
+            )
+
+        self.assertEqual(respuesta.status_code, 200)
+        self.assertFalse(respuesta.data['elegible'])
+
+        bloqueos = respuesta.data['bloqueos_vigentes']
+
+        self.assertEqual(len(bloqueos), 1)
+        self.assertEqual(
+            bloqueos[0]['fecha_inicio'],
+            '2026-10-15'
+        )
+        self.assertEqual(
+            bloqueos[0]['fecha_fin'],
+            '2026-11-13'
+        )
+
+        self.assertFalse(Sancion.objects.exists())
+
+    def test_api_mis_prestamos_informa_bloqueo_pendiente(self):
+        self.crear_prestamo(
+            fecha_limite=date(2026, 9, 15)
+        )
+
+        cliente = APIClient()
+        cliente.force_authenticate(
+            user=self.usuario
+        )
+
+        with patch(
+            'biblioteca.services.mis_prestamos_service.timezone.localdate',
+            return_value=self.hoy
+        ):
+            respuesta = cliente.get(
+                reverse('prestamos-mios')
+            )
+
+        self.assertEqual(respuesta.status_code, 200)
+
+        cuenta = respuesta.data['estado_cuenta']
+
+        self.assertTrue(cuenta['bloqueo_vigente'])
+        self.assertFalse(cuenta['puede_solicitar'])
+
+        self.assertFalse(
+            cuenta['adeudos_pendientes']
+        )
+
+        codigos = {
+            motivo['codigo']
+            for motivo in cuenta['motivos']
+        }
+
+        self.assertIn(
+            'BLOQUEO_VIGENTE',
+            codigos
+        )
+
+        self.assertNotIn(
+            'ADEUDO_PENDIENTE',
+            codigos
+        )
+
+        bloqueos = cuenta['bloqueos_vigentes']
+
+        self.assertEqual(len(bloqueos), 1)
+        self.assertEqual(
+            bloqueos[0]['fecha_inicio'],
+            '2026-10-15'
+        )
+        self.assertEqual(
+            bloqueos[0]['fecha_fin'],
+            '2026-11-13'
+        )
+
+        self.assertFalse(Sancion.objects.exists())

@@ -55,9 +55,17 @@ export interface MotivoRechazo {
   mensaje: string;
 }
 
+export interface BloqueoVigente {
+  prestamo_id: number;
+  motivo: string;
+  fecha_inicio: string;
+  fecha_fin: string;
+}
+
 export interface ElegibilidadPrestamo {
   elegible: boolean;
   motivos: MotivoRechazo[];
+  bloqueos_vigentes: BloqueoVigente[];
   usuario: Usuario;
   ejemplar: EjemplarPrestamo;
   prestamos_activos: number;

@@ -1,5 +1,9 @@
 from django.utils import timezone
 
+from biblioteca.services.bloqueos_service import (
+    BloqueosService,
+)
+
 from biblioteca.repositories.mis_prestamos_repository import (
     DjangoMisPrestamosRepository,
     IMisPrestamosRepository,
@@ -85,6 +89,16 @@ class MisPrestamosService:
             )
         )
 
+        bloqueos_vigentes = (
+            BloqueosService()
+            .obtener_bloqueos_vigentes_usuario(
+                usuario_id,
+                hoy
+            )
+        )
+
+        hay_bloqueo = len(bloqueos_vigentes) > 0
+
         cupos_disponibles = max(
             limite_prestamos - prestamos_activos,
             0
@@ -110,12 +124,12 @@ class MisPrestamosService:
                 )
             })
 
-        if restricciones['bloqueo_vigente']:
+        if hay_bloqueo:
             motivos.append({
                 'codigo': 'BLOQUEO_VIGENTE',
                 'mensaje': (
                     'Tienes un bloqueo temporal vigente '
-                    'registrado en el sistema.'
+                    'por retraso en la devolución.'
                 )
             })
 
@@ -126,9 +140,8 @@ class MisPrestamosService:
             'adeudos_pendientes': (
                 restricciones['adeudos_pendientes']
             ),
-            'bloqueo_vigente': (
-                restricciones['bloqueo_vigente']
-            ),
+            'bloqueo_vigente': hay_bloqueo,
+            'bloqueos_vigentes': bloqueos_vigentes,
             'puede_solicitar': len(motivos) == 0,
             'motivos': motivos,
         }

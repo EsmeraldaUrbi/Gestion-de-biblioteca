@@ -210,6 +210,52 @@
           }
         </div>
       </div>
+
+      @if (estadoCuenta(); as cuenta) {
+      @if (cuenta.bloqueos_vigentes.length > 0) {
+        <section
+          class="account-blocks"
+          aria-label="Bloqueos temporales vigentes"
+        >
+          <h3>Bloqueos temporales vigentes</h3>
+
+          <p class="account-blocks-intro">
+            No puedes solicitar nuevos préstamos
+            mientras permanezca vigente alguna
+            de estas restricciones.
+          </p>
+
+          @for (
+            bloqueo of cuenta.bloqueos_vigentes;
+            track bloqueo.prestamo_id
+          ) {
+            <div class="account-block">
+              <strong>
+                Préstamo #{{ bloqueo.prestamo_id }}
+              </strong>
+
+              <p>{{ bloqueo.motivo }}</p>
+
+              <div class="account-block-dates">
+                <div>
+                  <small>INICIO</small>
+                  <span>
+                    {{ formatearFecha(bloqueo.fecha_inicio) }}
+                  </span>
+                </div>
+
+                <div>
+                  <small>FIN</small>
+                  <span>
+                    {{ formatearFecha(bloqueo.fecha_fin) }}
+                  </span>
+                </div>
+              </div>
+            </div>
+          }
+        </section>
+      }
+    }
     </article>
   </section>
 

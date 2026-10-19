@@ -802,6 +802,34 @@
                   ) {
                     <p>{{ motivo.mensaje }}</p>
                   }
+
+                  @if (evaluacion.bloqueos_vigentes.length > 0) {
+                <div class="bloqueos-detalle">
+                  <strong>Bloqueos temporales vigentes</strong>
+                  @for (
+                      bloqueo of evaluacion.bloqueos_vigentes;
+                      track bloqueo.prestamo_id
+                    ) {
+                      <div class="bloqueo-item">
+                        <strong>
+                          Préstamo #{{ bloqueo.prestamo_id }}
+                        </strong>
+
+                        <p>{{ bloqueo.motivo }}</p>
+
+                        <p>
+                          Inicio:
+                          {{ formatearFecha(bloqueo.fecha_inicio) }}
+                        </p>
+
+                        <p>
+                          Fin:
+                          {{ formatearFecha(bloqueo.fecha_fin) }}
+                        </p>
+                      </div>
+                    }
+                  </div>
+                }
                 </div>
               </div>
             }

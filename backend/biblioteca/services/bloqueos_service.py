@@ -243,3 +243,90 @@ class BloqueosService:
             )
 
             return True
+
+    def obtener_bloqueos_vigentes_usuario(
+            self,
+            usuario_id: int,
+            fecha_actual: Optional[date] = None
+        ) -> list[dict]:
+            """
+            Obtiene los bloqueos vigentes de un usuario.
+
+            Incluye los registrados en la base de datos
+            y los que ya corresponden por retraso, aunque
+            el worker todavia no los haya registrado.
+
+            No realiza operaciones de escritura.
+            """
+            hoy = (
+                fecha_actual
+                if fecha_actual is not None
+                else timezone.localdate()
+            )
+
+            sanciones = (
+                self.repository.listar_bloqueos_vigentes_usuario(
+                    usuario_id,
+                    hoy
+                )
+            )
+
+            bloqueos = []
+            prestamos_registrados = set()
+
+            for sancion in sanciones:
+                prestamos_registrados.add(
+                    sancion.prestamo_id
+                )
+
+                bloqueos.append({
+                    'prestamo_id': sancion.prestamo_id,
+                    'motivo': (
+                        'Retraso en la devolución '
+                        'de un préstamo.'
+                    ),
+                    'fecha_inicio': (
+                        sancion.fecha_inicio_bloqueo
+                    ),
+                    'fecha_fin': (
+                        sancion.fecha_fin_bloqueo
+                    ),
+                })
+
+            candidatos = (
+                self.repository.listar_prestamos_candidatos_usuario(
+                    usuario_id,
+                    hoy
+                )
+            )
+
+            for prestamo in candidatos:
+                if prestamo.prestamo_id in prestamos_registrados:
+                    continue
+
+                inicio = self.calcular_inicio_bloqueo(
+                    prestamo.fecha_limite
+                )
+
+                fin = self.calcular_fin_bloqueo(
+                    inicio
+                )
+
+                if inicio <= hoy <= fin:
+                    bloqueos.append({
+                        'prestamo_id': prestamo.prestamo_id,
+                        'motivo': (
+                            'Retraso en la devolución '
+                            'de un préstamo.'
+                        ),
+                        'fecha_inicio': inicio,
+                        'fecha_fin': fin,
+                    })
+
+            return sorted(
+                bloqueos,
+                key=lambda bloqueo: (
+                    bloqueo['fecha_fin'],
+                    bloqueo['prestamo_id']
+                )
+            )

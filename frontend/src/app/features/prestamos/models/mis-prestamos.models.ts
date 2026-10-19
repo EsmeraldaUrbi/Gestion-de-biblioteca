@@ -1,3 +1,7 @@
+import type {
+  BloqueoVigente,
+} from './prestamo.models';
+
 export type FiltroMisPrestamos =
   | 'todos'
   | 'activos'
@@ -51,6 +55,7 @@ export interface EstadoCuentaPrestamos {
   bloqueo_vigente: boolean;
   puede_solicitar: boolean;
   motivos: MotivoRestriccion[];
+  bloqueos_vigentes: BloqueoVigente[];
 }
 
 export interface MisPrestamosResponse {

@@ -409,6 +409,13 @@ class PrestamoService:
             ),
             'fecha_prestamo': fecha_actual,
             'fecha_limite': fecha_limite,
+            'bloqueos_vigentes': (
+                BloqueosService()
+                .obtener_bloqueos_vigentes_usuario(
+                    usuario_id,
+                    fecha_actual
+                )
+            ),
         }
 
         try:

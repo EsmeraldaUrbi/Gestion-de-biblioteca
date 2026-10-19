@@ -54,6 +54,12 @@ class MotivoRechazoSerializer(serializers.Serializer):
     codigo = serializers.CharField()
     mensaje = serializers.CharField()
 
+class BloqueoVigenteSerializer(serializers.Serializer):
+    prestamo_id = serializers.IntegerField()
+    motivo = serializers.CharField()
+    fecha_inicio = serializers.DateField()
+    fecha_fin = serializers.DateField()
+
 
 class ElegibilidadPrestamoSerializer(serializers.Serializer):
     """
@@ -64,6 +70,11 @@ class ElegibilidadPrestamoSerializer(serializers.Serializer):
 
     motivos = MotivoRechazoSerializer(
         many=True
+    )
+
+    bloqueos_vigentes = BloqueoVigenteSerializer(
+        many=True,
+        read_only=True
     )
 
     usuario = UsuarioSerializer(

@@ -19,6 +19,10 @@ from biblioteca.services.mis_prestamos_service import (
     MisPrestamosService,
 )
 
+from biblioteca.presentation.prestamos_serializers import (
+    BloqueoVigenteSerializer,
+)
+
 
 class MisPrestamosPagination(PageNumberPagination):
     page_size = 8
@@ -72,6 +76,13 @@ class MisPrestamosView(APIView):
             limite_prestamos=limite_prestamos,
             resumen=resumen,
             hoy=hoy
+        )
+
+        estado_cuenta['bloqueos_vigentes'] = (
+            BloqueoVigenteSerializer(
+                estado_cuenta['bloqueos_vigentes'],
+                many=True
+            ).data
         )
 
         paginador = MisPrestamosPagination()
