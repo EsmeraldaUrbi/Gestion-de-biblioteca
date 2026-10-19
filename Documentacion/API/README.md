@@ -23,6 +23,7 @@ Corresponde al entregable 2.4 del proyecto.
 |---|---|---|
 | Autenticación (3.1) | Backend y frontend implementados | Pendiente de documentar |
 | Gestión de usuarios (3.2) | Backend implementado | [usuarios.md](usuarios.md) |
+| Gestión de libros, autores, categorías y ejemplares (3.3) | Backend implementado (Frontend en desarrollo) | [libros_ejemplares.md](libros_ejemplares.md) |
 | Catálogo (3.4.2) | Backend implementado | [API_catalogo.md](../API_catalogo.md) |
 | Otros módulos | En desarrollo o pendientes de integración | Pendientes de definir o documentar |
 

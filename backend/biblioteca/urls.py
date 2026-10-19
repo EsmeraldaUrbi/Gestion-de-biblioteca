@@ -33,6 +33,16 @@ from biblioteca.presentation.ejemplares_views import (
     EjemplarDetailView,
 )
 
+# 3.3 Gestión de autores y categorías.
+from biblioteca.presentation.autores_views import (
+    AutoresListCreateView,
+    AutorDetailView,
+)
+from biblioteca.presentation.categorias_views import (
+    CategoriasListCreateView,
+    CategoriaDetailView,
+)
+
 # 3.4 Catálogo.
 from biblioteca.presentation.catalogo_views import (
     CatalogoListView,
@@ -179,6 +189,34 @@ urlpatterns = [
         'ejemplares/<int:ejemplar_id>/',
         EjemplarDetailView.as_view(),
         name='ejemplares-detail'
+    ),
+
+    # -----------------------------------------
+    # 3.3 Autores y categorías
+    # -----------------------------------------
+
+    path(
+        'autores/',
+        AutoresListCreateView.as_view(),
+        name='autores-list-create'
+    ),
+
+    path(
+        'autores/<int:autor_id>/',
+        AutorDetailView.as_view(),
+        name='autores-detail'
+    ),
+
+    path(
+        'categorias/',
+        CategoriasListCreateView.as_view(),
+        name='categorias-list-create'
+    ),
+
+    path(
+        'categorias/<int:categoria_id>/',
+        CategoriaDetailView.as_view(),
+        name='categorias-detail'
     ),
 
     # -----------------------------------------
