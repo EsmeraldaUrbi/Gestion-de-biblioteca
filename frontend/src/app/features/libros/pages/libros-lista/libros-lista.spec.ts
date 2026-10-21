@@ -134,6 +134,26 @@ describe('LibrosListaComponent', () => {
       const totalText = compiled.querySelector('.summary-card strong')?.textContent;
       expect(totalText).toBe('2');
     });
+
+    it('debe contener enlaces discretos hacia la administración de autores y categorías manteniendo el botón principal de nuevo libro', () => {
+      fixture.detectChanges();
+      const compiled = fixture.nativeElement as HTMLElement;
+
+      const linkAutores = compiled.querySelector('#link-administrar-autores');
+      expect(linkAutores).toBeTruthy();
+      expect(linkAutores?.getAttribute('routerLink')).toBe('/autores');
+      expect(linkAutores?.textContent?.trim()).toBe('Autores');
+
+      const linkCategorias = compiled.querySelector('#link-administrar-categorias');
+      expect(linkCategorias).toBeTruthy();
+      expect(linkCategorias?.getAttribute('routerLink')).toBe('/categorias');
+      expect(linkCategorias?.textContent?.trim()).toBe('Categorías');
+
+      const btnNuevoLibro = compiled.querySelector('#btn-nuevo-libro');
+      expect(btnNuevoLibro).toBeTruthy();
+      expect(btnNuevoLibro?.getAttribute('routerLink')).toBe('/libros/nuevo');
+      expect(btnNuevoLibro?.classList.contains('primary-button')).toBe(true);
+    });
   });
 
   describe('Búsqueda reactiva con debounce', () => {

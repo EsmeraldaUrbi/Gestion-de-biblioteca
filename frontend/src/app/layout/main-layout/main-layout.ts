@@ -84,6 +84,18 @@ export class MainLayoutComponent implements OnInit {
       icon: 'admin-books',
     },
     {
+      label: 'Autores',
+      route: '/autores',
+      roles: ['bibliotecario'],
+      icon: 'authors',
+    },
+    {
+      label: 'Categorías',
+      route: '/categorias',
+      roles: ['bibliotecario'],
+      icon: 'categories',
+    },
+    {
       label: 'Usuarios',
       route: '/usuarios',
       roles: ['bibliotecario'],

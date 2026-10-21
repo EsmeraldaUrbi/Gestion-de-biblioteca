@@ -1,0 +1,310 @@
+<section class="categorias-page">
+  <!-- Encabezado de la página -->
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Administración de biblioteca • Clasificación</p>
+      <h1>Gestión de categorías</h1>
+      <p class="description">
+        Catálogo central de categorías temáticas y control de libros clasificados.
+      </p>
+    </div>
+
+    <div class="header-actions">
+      <span class="role-label">Bibliotecario</span>
+      <button
+        id="btn-nueva-categoria"
+        type="button"
+        class="primary-button"
+        (click)="abrirModalRegistro()"
+        aria-label="Registrar una nueva categoría"
+      >
+        + Nueva categoría
+      </button>
+    </div>
+  </header>
+
+  <!-- Banner de éxito -->
+  @if (mensajeExito()) {
+    <div class="success-banner" role="status" aria-live="polite">
+      <span class="success-icon" aria-hidden="true">✓</span>
+      <span class="success-text">{{ mensajeExito() }}</span>
+      <button
+        type="button"
+        class="btn-cerrar-banner"
+        (click)="cerrarMensajeExito()"
+        aria-label="Cerrar notificación de éxito"
+      >
+        ✕
+      </button>
+    </div>
+  }
+
+  <!-- Tarjeta de resumen estadístico -->
+  <div class="summary-card">
+    <span>Total de categorías registradas</span>
+    <strong>{{ total() }}</strong>
+  </div>
+
+  <!-- Contenedor principal de tabla y filtros -->
+  <section class="table-card" aria-label="Listado administrativo de categorías">
+    <div class="filters-container">
+      <div class="input-wrapper search-wrapper">
+        <svg
+          class="input-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          aria-hidden="true"
+        >
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input
+          id="filtro-categoria-nombre"
+          type="text"
+          placeholder="Buscar categoría por nombre..."
+          [ngModel]="busquedaNombre()"
+          (ngModelChange)="actualizarBusqueda($event)"
+          class="filter-input"
+          aria-label="Buscar categoría por nombre"
+        />
+        @if (busquedaNombre()) {
+          <button
+            type="button"
+            class="btn-limpiar-busqueda"
+            (click)="limpiarBusqueda()"
+            aria-label="Limpiar búsqueda de categorías"
+          >
+            ✕
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Estados de datos -->
+    @if (cargando()) {
+      <div class="state-message" role="status" aria-live="polite">
+        <span class="spinner" aria-hidden="true"></span>
+        <p>Cargando categorías...</p>
+      </div>
+    } @else if (errorListado()) {
+      <div class="state-message state-message--error" role="alert">
+        <p class="error-title">No se pudo cargar la lista</p>
+        <p class="error-desc">{{ errorListado() }}</p>
+        <button
+          type="button"
+          class="secondary-button"
+          (click)="cargarCategorias()"
+        >
+          Reintentar
+        </button>
+      </div>
+    } @else if (categorias().length === 0) {
+      <div class="state-message">
+        <p class="empty-title">
+          @if (busquedaNombre().trim()) {
+            Sin resultados para "{{ busquedaNombre().trim() }}"
+          } @else {
+            Sin categorías registradas
+          }
+        </p>
+        <p class="empty-desc">
+          @if (busquedaNombre().trim()) {
+            Intente con otro término o limpie el campo de búsqueda.
+          } @else {
+            Aún no se han registrado categorías temáticas en el catálogo.
+          }
+        </p>
+      </div>
+    } @else {
+      <!-- Tabla de categorías -->
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col" class="th-id"># ID</th>
+              <th scope="col">Nombre de la categoría</th>
+              <th scope="col" class="th-libros">Libros asociados</th>
+              <th scope="col" class="th-actions">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (cat of categorias(); track cat.categoria_id) {
+              <tr>
+                <td class="td-id">
+                  <span class="id-badge">#{{ cat.categoria_id }}</span>
+                </td>
+                <td>
+                  <span class="categoria-nombre">{{ cat.nombre_categoria }}</span>
+                </td>
+                <td class="td-libros">
+                  <span class="count-badge" [attr.aria-label]="cat.cantidad_libros + ' libros asociados'">
+                    <strong>{{ cat.cantidad_libros }}</strong>
+                    {{ cat.cantidad_libros === 1 ? 'libro' : 'libros' }}
+                  </span>
+                </td>
+                <td class="td-actions">
+                  <button
+                    [id]="'btn-editar-categoria-' + cat.categoria_id"
+                    type="button"
+                    class="table-action-btn table-action-btn--edit"
+                    (click)="abrirModalEdicion(cat)"
+                    [attr.aria-label]="'Editar categoría ' + cat.nombre_categoria + ' con ID ' + cat.categoria_id"
+                  >
+                    Editar
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Paginación -->
+      <footer class="pagination">
+        <p>
+          Mostrando {{ primerRegistro() }}-{{ ultimoRegistro() }} de {{ total() }} categorías
+        </p>
+
+        <div class="pagination-controls">
+          <button
+            type="button"
+            class="secondary-button"
+            [disabled]="pagina() <= 1 || cargando()"
+            (click)="cambiarPagina(pagina() - 1)"
+            aria-label="Página anterior de categorías"
+          >
+            &lt; Anterior
+          </button>
+
+          <span class="page-indicator">
+            Página {{ pagina() }} de {{ totalPaginas() }}
+          </span>
+
+          <button
+            type="button"
+            class="secondary-button"
+            [disabled]="pagina() >= totalPaginas() || cargando()"
+            (click)="cambiarPagina(pagina() + 1)"
+            aria-label="Página siguiente de categorías"
+          >
+            Siguiente &gt;
+          </button>
+        </div>
+      </footer>
+    }
+  </section>
+
+  <!-- ── Modal: Registrar / Editar categoría ──────────────────────────────── -->
+  @if (modalAbierto()) {
+    <div class="modal-backdrop" (click)="cerrarModal()">
+      <div
+        #modalDialog
+        class="modal-dialog"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-categoria-titulo"
+        (click)="$event.stopPropagation()"
+      >
+        <header class="modal-header">
+          <div>
+            <p class="modal-eyebrow">
+              @if (modoEdicion()) {
+                Categoría #{{ categoriaSeleccionada()?.categoria_id }}
+              } @else {
+                Clasificación bibliográfica
+              }
+            </p>
+            <h3 id="modal-categoria-titulo">
+              {{ modoEdicion() ? 'Editar categoría' : 'Registrar nueva categoría' }}
+            </h3>
+          </div>
+          <button
+            type="button"
+            class="btn-cerrar-modal"
+            (click)="cerrarModal()"
+            [disabled]="guardando()"
+            aria-label="Cerrar formulario de categoría"
+          >
+            ✕
+          </button>
+        </header>
+
+        <div class="modal-body">
+          <!-- En modo edición: ficha informativa de solo lectura -->
+          @if (modoEdicion(); as _) {
+            @if (categoriaSeleccionada(); as cat) {
+              <div class="modal-category-summary">
+                <span class="summary-label">Identificador único</span>
+                <div class="summary-id">#{{ cat.categoria_id }}</div>
+                <div class="summary-hint">
+                  Libros asociados: <strong>{{ cat.cantidad_libros }}</strong>
+                </div>
+              </div>
+            }
+          }
+
+          <!-- Mensaje de error general si aplica -->
+          @if (errorGeneralModal()) {
+            <div class="modal-error" role="alert">
+              {{ errorGeneralModal() }}
+            </div>
+          }
+
+          <form [formGroup]="formCategoria" (ngSubmit)="onSubmit()" novalidate>
+            <div class="field-group">
+              <label for="input-nombre-categoria" class="field-label">
+                Nombre de la categoría <span class="required-mark">*</span>
+              </label>
+              <input
+                #inputNombre
+                id="input-nombre-categoria"
+                type="text"
+                formControlName="nombre_categoria"
+                class="field-input"
+                [class.field-input--error]="!!obtenerErrorNombre()"
+                placeholder="Ej. Realismo Mágico, Ciencia Ficción"
+                maxlength="50"
+                autocomplete="off"
+                aria-describedby="error-categoria-nombre hint-categoria-nombre"
+              />
+              @if (obtenerErrorNombre()) {
+                <p id="error-categoria-nombre" class="field-error" role="alert">
+                  {{ obtenerErrorNombre() }}
+                </p>
+              }
+              <p id="hint-categoria-nombre" class="field-hint">
+                Máximo 50 caracteres. El nombre debe ser único en el sistema.
+              </p>
+            </div>
+
+            <div class="modal-actions">
+              <button
+                type="button"
+                class="secondary-button"
+                (click)="cerrarModal()"
+                [disabled]="guardando()"
+              >
+                Cancelar
+              </button>
+              <button
+                id="btn-guardar-categoria"
+                type="submit"
+                class="primary-button"
+                [disabled]="guardando()"
+              >
+                @if (guardando()) {
+                  <span class="btn-spinner" aria-hidden="true"></span>
+                  Guardando...
+                } @else {
+                  {{ modoEdicion() ? 'Guardar cambios' : 'Registrar categoría' }}
+                }
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  }
+</section>

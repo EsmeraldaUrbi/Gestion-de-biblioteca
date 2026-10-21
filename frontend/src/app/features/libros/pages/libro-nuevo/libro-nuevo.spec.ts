@@ -209,4 +209,64 @@ describe('LibroNuevoComponent', () => {
       httpTesting.expectOne(librosUrl).flush(MOCK_LIBRO);
     });
   });
+
+  // -------------------------------------------------------------------------
+  // Integración con Autores y Categorías (Ticket 3.3 Etapa 4)
+  // -------------------------------------------------------------------------
+  describe('integración con catálogo dinámico de autores y categorías', () => {
+    it('debe incorporar autores y categorías recién creados al consultar las opciones', () => {
+      const opcionesDinamicas = {
+        autores: [
+          { autor_id: 1, nombre: 'Miguel de Cervantes' },
+          { autor_id: 42, nombre: 'Nuevo Autor Registrado' },
+        ],
+        categorias: [
+          { categoria_id: 2, nombre_categoria: 'Novela Clásica' },
+          { categoria_id: 88, nombre_categoria: 'Nueva Categoría Registrada' },
+        ],
+      };
+
+      fixture.detectChanges();
+      httpTesting.expectOne(catalogoFiltrosUrl).flush(opcionesDinamicas);
+      fixture.detectChanges();
+
+      expect(component.autoresDisponibles()).toEqual(opcionesDinamicas.autores);
+      expect(component.categoriasDisponibles()).toEqual(opcionesDinamicas.categorias);
+      expect(component.autoresDisponibles().some((a) => a.autor_id === 42)).toBe(true);
+      expect(component.categoriasDisponibles().some((c) => c.categoria_id === 88)).toBe(true);
+    });
+
+    it('debe enviar autor_ids y categoria_ids en el cuerpo de registro hacia el backend', () => {
+      fixture.detectChanges();
+      httpTesting.expectOne(catalogoFiltrosUrl).flush(MOCK_FILTROS);
+      fixture.detectChanges();
+
+      const payloadConAsociaciones = {
+        titulo: 'Obra Completa',
+        isbn: '9781234567890',
+        autor_ids: [1, 2],
+        categoria_ids: [2, 5],
+      };
+
+      component.registrar(payloadConAsociaciones);
+
+      const req = httpTesting.expectOne(librosUrl);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual(payloadConAsociaciones);
+      req.flush({ ...MOCK_LIBRO, ...payloadConAsociaciones });
+
+      expect(component.libroCreado()).toBeTruthy();
+    });
+
+    it('debe operar normalmente cuando el catálogo no contiene autores ni categorías registrados', () => {
+      fixture.detectChanges();
+      httpTesting.expectOne(catalogoFiltrosUrl).flush({ autores: [], categorias: [] });
+      fixture.detectChanges();
+
+      expect(component.autoresDisponibles()).toEqual([]);
+      expect(component.categoriasDisponibles()).toEqual([]);
+      expect(component.cargandoFiltros()).toBe(false);
+      expect(component.errorFiltros()).toBeNull();
+    });
+  });
 });

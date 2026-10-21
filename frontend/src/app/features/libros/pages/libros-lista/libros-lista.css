@@ -61,7 +61,9 @@ h1 {
 }
 
 .primary-button {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 10px 18px;
   border: 1px solid #0765d8;
   border-radius: 8px;
@@ -356,6 +358,9 @@ tbody tr:hover {
 }
 
 .secondary-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   padding: 8px 14px;
   border: 1px solid #d9e0eb;
   border-radius: 7px;
@@ -365,11 +370,19 @@ tbody tr:hover {
   font-size: 12px;
   font-weight: 500;
   cursor: pointer;
+  text-decoration: none;
   transition: all 0.15s ease;
 }
 
 .secondary-button:hover:not(:disabled) {
   background: #eef3fb;
+  border-color: #b0bcd0;
+  color: #0f172a;
+}
+
+.secondary-button:focus-visible {
+  outline: 2px solid #0765d8;
+  outline-offset: 2px;
 }
 
 .secondary-button:disabled {

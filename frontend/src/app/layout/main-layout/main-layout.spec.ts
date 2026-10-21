@@ -7,6 +7,8 @@ import { MainLayoutComponent } from './main-layout';
 import { AuthService } from '../../core/auth/services/auth.service';
 import { AuthSessionService } from '../../core/auth/services/auth-session.service';
 import { UserRole, UsuarioSesion } from '../../core/auth/models/auth.models';
+import { routes } from '../../app.routes';
+import { roleGuard } from '../../core/auth/guards/role.guard';
 
 describe('MainLayoutComponent', () => {
   let component: MainLayoutComponent;
@@ -107,7 +109,7 @@ describe('MainLayoutComponent', () => {
       ]);
     });
 
-    it('para bibliotecario debe mostrar módulos administrativos y no módulos de lector', () => {
+    it('para bibliotecario debe mostrar módulos administrativos (incluyendo Autores y Categorías) y no módulos de lector', () => {
       sessionServiceMock.rol.set('bibliotecario');
       fixture.detectChanges();
 
@@ -118,10 +120,15 @@ describe('MainLayoutComponent', () => {
         'Inicio',
         'Catálogo',
         'Gestión de libros',
+        'Autores',
+        'Categorías',
         'Usuarios',
         'Préstamos',
         'Devoluciones',
       ]);
+
+      expect(items.find((i) => i.label === 'Autores')?.route).toBe('/autores');
+      expect(items.find((i) => i.label === 'Categorías')?.route).toBe('/categorias');
 
       expect(labels).not.toContain('Mis préstamos');
       expect(labels).not.toContain('Mis sanciones');
@@ -184,6 +191,55 @@ describe('MainLayoutComponent', () => {
       expect(authServiceMock.logout).toHaveBeenCalled();
       expect(router.navigateByUrl).toHaveBeenCalledWith('/login');
       expect(component.menuPerfilAbierto()).toBe(false);
+    });
+  });
+
+  describe('Configuración de rutas de Autores y Categorías (Ticket 3.3 Etapa 4)', () => {
+    const mainRoute = routes.find((r) => r.path === '');
+    const children = mainRoute?.children ?? [];
+
+    it('la ruta /autores debe estar configurada bajo el layout principal con roleGuard para bibliotecario', async () => {
+      const rutaAutores = children.find((r) => r.path === 'autores');
+      expect(rutaAutores).toBeDefined();
+      expect(rutaAutores?.canActivate).toContain(roleGuard);
+      expect(rutaAutores?.data?.['roles']).toEqual(['bibliotecario']);
+
+      // Debe resolver mediante lazy loading al componente AutoresListaComponent.
+      // El nombre interno puede variar según el bundler (ej. '_AutoresListaComponent'),
+      // por eso se verifica que sea una función de clase Angular con ɵcmp.
+      expect(typeof rutaAutores?.loadComponent).toBe('function');
+      const loadedAutores = await (rutaAutores?.loadComponent as () => Promise<any>)();
+      expect(typeof loadedAutores).toBe('function');
+      expect(loadedAutores.ɵcmp).toBeDefined();
+      expect(loadedAutores.ɵcmp.selectors).toBeDefined();
+    });
+
+    it('la ruta /categorias debe estar configurada bajo el layout principal con roleGuard para bibliotecario', async () => {
+      const rutaCategorias = children.find((r) => r.path === 'categorias');
+      expect(rutaCategorias).toBeDefined();
+      expect(rutaCategorias?.canActivate).toContain(roleGuard);
+      expect(rutaCategorias?.data?.['roles']).toEqual(['bibliotecario']);
+
+      // Debe resolver mediante lazy loading al componente CategoriasListaComponent.
+      expect(typeof rutaCategorias?.loadComponent).toBe('function');
+      const loadedCategorias = await (rutaCategorias?.loadComponent as () => Promise<any>)();
+      expect(typeof loadedCategorias).toBe('function');
+      expect(loadedCategorias.ɵcmp).toBeDefined();
+      expect(loadedCategorias.ɵcmp.selectors).toBeDefined();
+    });
+
+    it('los enlaces de Autores y Categorías no deben mostrarse para estudiante ni docente', () => {
+      sessionServiceMock.rol.set('estudiante');
+      fixture.detectChanges();
+      let labels = component.visibleNavigation().map((i) => i.label);
+      expect(labels).not.toContain('Autores');
+      expect(labels).not.toContain('Categorías');
+
+      sessionServiceMock.rol.set('docente');
+      fixture.detectChanges();
+      labels = component.visibleNavigation().map((i) => i.label);
+      expect(labels).not.toContain('Autores');
+      expect(labels).not.toContain('Categorías');
     });
   });
 });

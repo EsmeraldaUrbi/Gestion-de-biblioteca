@@ -1,0 +1,389 @@
+<section class="autores-page">
+  <!-- Encabezado de la página -->
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">Administración de biblioteca • Autores</p>
+      <h1>Gestión de autores</h1>
+      <p class="description">
+        Catálogo central de autores bibliográficos y consulta de libros vinculados.
+      </p>
+    </div>
+
+    <div class="header-actions">
+      <span class="role-label">Bibliotecario</span>
+      <button
+        id="btn-nuevo-autor"
+        type="button"
+        class="primary-button"
+        (click)="abrirModalRegistro()"
+        aria-label="Registrar un nuevo autor"
+      >
+        + Nuevo autor
+      </button>
+    </div>
+  </header>
+
+  <!-- Banner de éxito -->
+  @if (mensajeExito()) {
+    <div class="success-banner" role="status" aria-live="polite">
+      <span class="success-icon" aria-hidden="true">✓</span>
+      <span class="success-text">{{ mensajeExito() }}</span>
+      <button
+        type="button"
+        class="btn-cerrar-banner"
+        (click)="cerrarMensajeExito()"
+        aria-label="Cerrar notificación de éxito"
+      >
+        ✕
+      </button>
+    </div>
+  }
+
+  <!-- Tarjeta de resumen estadístico -->
+  <div class="summary-card">
+    <span>Total de autores registrados</span>
+    <strong>{{ total() }}</strong>
+  </div>
+
+  <!-- Contenedor principal de tabla y filtros -->
+  <section class="table-card" aria-label="Listado administrativo de autores">
+    <div class="filters-container">
+      <div class="input-wrapper search-wrapper">
+        <svg
+          class="input-icon"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          aria-hidden="true"
+        >
+          <circle cx="11" cy="11" r="8"></circle>
+          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+        </svg>
+        <input
+          id="filtro-autor-nombre"
+          type="text"
+          placeholder="Buscar autor por nombre..."
+          [ngModel]="busquedaNombre()"
+          (ngModelChange)="actualizarBusqueda($event)"
+          class="filter-input"
+          aria-label="Buscar autor por nombre"
+        />
+        @if (busquedaNombre()) {
+          <button
+            type="button"
+            class="btn-limpiar-busqueda"
+            (click)="limpiarBusqueda()"
+            aria-label="Limpiar búsqueda de autores"
+          >
+            ✕
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Estados de datos -->
+    @if (cargando()) {
+      <div class="state-message" role="status" aria-live="polite">
+        <span class="spinner" aria-hidden="true"></span>
+        <p>Cargando autores...</p>
+      </div>
+    } @else if (errorListado()) {
+      <div class="state-message state-message--error" role="alert">
+        <p class="error-title">No se pudo cargar la lista</p>
+        <p class="error-desc">{{ errorListado() }}</p>
+        <button
+          type="button"
+          class="secondary-button"
+          (click)="cargarAutores()"
+        >
+          Reintentar
+        </button>
+      </div>
+    } @else if (autores().length === 0) {
+      <div class="state-message">
+        <p class="empty-title">
+          @if (busquedaNombre().trim()) {
+            Sin resultados para "{{ busquedaNombre().trim() }}"
+          } @else {
+            Sin autores registrados
+          }
+        </p>
+        <p class="empty-desc">
+          @if (busquedaNombre().trim()) {
+            Intente con otro término o limpie el campo de búsqueda.
+          } @else {
+            Aún no se han registrado autores en el catálogo de la biblioteca.
+          }
+        </p>
+      </div>
+    } @else {
+      <!-- Tabla de autores -->
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col" class="th-id"># ID</th>
+              <th scope="col">Nombre del autor</th>
+              <th scope="col" class="th-libros">Libros asociados</th>
+              <th scope="col" class="th-actions">Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (autor of autores(); track autor.autor_id) {
+              <tr>
+                <td class="td-id">
+                  <span class="id-badge">#{{ autor.autor_id }}</span>
+                </td>
+                <td>
+                  <span class="autor-nombre">{{ autor.nombre }}</span>
+                </td>
+                <td class="td-libros">
+                  <span class="count-badge" [attr.aria-label]="autor.cantidad_libros + ' libros asociados'">
+                    <strong>{{ autor.cantidad_libros }}</strong>
+                    {{ autor.cantidad_libros === 1 ? 'libro' : 'libros' }}
+                  </span>
+                </td>
+                <td class="td-actions">
+                  <button
+                    [id]="'btn-editar-autor-' + autor.autor_id"
+                    type="button"
+                    class="table-action-btn table-action-btn--edit"
+                    (click)="abrirModalEdicion(autor)"
+                    [attr.aria-label]="'Editar autor ' + autor.nombre + ' con ID ' + autor.autor_id"
+                  >
+                    Editar
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Paginación -->
+      <footer class="pagination">
+        <p>
+          Mostrando {{ primerRegistro() }}-{{ ultimoRegistro() }} de {{ total() }} autores
+        </p>
+
+        <div class="pagination-controls">
+          <button
+            type="button"
+            class="secondary-button"
+            [disabled]="pagina() <= 1 || cargando()"
+            (click)="cambiarPagina(pagina() - 1)"
+            aria-label="Página anterior de autores"
+          >
+            &lt; Anterior
+          </button>
+
+          <span class="page-indicator">
+            Página {{ pagina() }} de {{ totalPaginas() }}
+          </span>
+
+          <button
+            type="button"
+            class="secondary-button"
+            [disabled]="pagina() >= totalPaginas() || cargando()"
+            (click)="cambiarPagina(pagina() + 1)"
+            aria-label="Página siguiente de autores"
+          >
+            Siguiente &gt;
+          </button>
+        </div>
+      </footer>
+    }
+  </section>
+
+  <!-- ── Modal: Registrar nuevo autor ──────────────────────────────────────── -->
+  @if (modalRegistroAbierto()) {
+    <div class="modal-backdrop" (click)="cerrarModalRegistro()">
+      <div
+        class="modal-dialog"
+        #modalRegistroDialog
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-registro-titulo"
+        (click)="$event.stopPropagation()"
+      >
+        <header class="modal-header">
+          <div>
+            <p class="modal-eyebrow">Catálogo de autores</p>
+            <h3 id="modal-registro-titulo">Registrar nuevo autor</h3>
+          </div>
+          <button
+            type="button"
+            class="btn-cerrar-modal"
+            (click)="cerrarModalRegistro()"
+            [disabled]="guardando()"
+            aria-label="Cerrar formulario de registro"
+          >
+            ✕
+          </button>
+        </header>
+
+        <div class="modal-body">
+          @if (errorRegistro()) {
+            <div class="modal-error" role="alert">
+              {{ errorRegistro() }}
+            </div>
+          }
+
+          <form [formGroup]="formRegistro" (ngSubmit)="onSubmitRegistro()" novalidate>
+            <div class="field-group">
+              <label for="input-nombre-autor" class="field-label">
+                Nombre del autor <span class="required-mark">*</span>
+              </label>
+              <input
+                id="input-nombre-autor"
+                #inputNombreRegistro
+                type="text"
+                formControlName="nombre"
+                class="field-input"
+                [class.field-input--error]="!!obtenerErrorNombre('formRegistro')"
+                placeholder="Ej. Gabriel García Márquez"
+                maxlength="100"
+                autocomplete="off"
+                aria-describedby="error-registro-nombre hint-registro-nombre"
+              />
+              @if (obtenerErrorNombre('formRegistro')) {
+                <p id="error-registro-nombre" class="field-error" role="alert">
+                  {{ obtenerErrorNombre('formRegistro') }}
+                </p>
+              }
+              <p id="hint-registro-nombre" class="field-hint">
+                Máximo 100 caracteres. Se permiten homónimos.
+              </p>
+            </div>
+
+            <div class="modal-actions">
+              <button
+                type="button"
+                class="secondary-button"
+                (click)="cerrarModalRegistro()"
+                [disabled]="guardando()"
+              >
+                Cancelar
+              </button>
+              <button
+                id="btn-guardar-autor"
+                type="submit"
+                class="primary-button"
+                [disabled]="guardando()"
+              >
+                @if (guardando()) {
+                  <span class="btn-spinner" aria-hidden="true"></span>
+                  Guardando...
+                } @else {
+                  Registrar autor
+                }
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ── Modal: Editar autor ───────────────────────────────────────────────── -->
+  @if (modalEdicionAbierto()) {
+    @if (autorSeleccionado(); as autor) {
+      <div class="modal-backdrop" (click)="cerrarModalEdicion()">
+        <div
+          class="modal-dialog"
+          #modalEdicionDialog
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="modal-edicion-titulo"
+          (click)="$event.stopPropagation()"
+        >
+          <header class="modal-header">
+            <div>
+              <p class="modal-eyebrow">Autor #{{ autor.autor_id }}</p>
+              <h3 id="modal-edicion-titulo">Editar nombre de autor</h3>
+            </div>
+            <button
+              type="button"
+              class="btn-cerrar-modal"
+              (click)="cerrarModalEdicion()"
+              [disabled]="guardando()"
+              aria-label="Cerrar formulario de edición"
+            >
+              ✕
+            </button>
+          </header>
+
+          <div class="modal-body">
+            <!-- Ficha informativa del autor -->
+            <div class="modal-author-summary">
+              <span class="summary-label">Identificador único</span>
+              <div class="summary-id">#{{ autor.autor_id }}</div>
+              <div class="summary-hint">
+                Libros vinculados: <strong>{{ autor.cantidad_libros }}</strong>
+              </div>
+            </div>
+
+            @if (errorEdicion()) {
+              <div class="modal-error" role="alert">
+                {{ errorEdicion() }}
+              </div>
+            }
+
+            <form [formGroup]="formEdicion" (ngSubmit)="onSubmitEdicion()" novalidate>
+              <div class="field-group">
+                <label for="input-editar-nombre-autor" class="field-label">
+                  Nombre del autor <span class="required-mark">*</span>
+                </label>
+                <input
+                  id="input-editar-nombre-autor"
+                  #inputNombreEdicion
+                  type="text"
+                  formControlName="nombre"
+                  class="field-input"
+                  [class.field-input--error]="!!obtenerErrorNombre('formEdicion')"
+                  placeholder="Ej. Gabriel García Márquez"
+                  maxlength="100"
+                  autocomplete="off"
+                  aria-describedby="error-edicion-nombre hint-edicion-nombre"
+                />
+                @if (obtenerErrorNombre('formEdicion')) {
+                  <p id="error-edicion-nombre" class="field-error" role="alert">
+                    {{ obtenerErrorNombre('formEdicion') }}
+                  </p>
+                }
+                <p id="hint-edicion-nombre" class="field-hint">
+                  Máximo 100 caracteres.
+                </p>
+              </div>
+
+              <div class="modal-actions">
+                <button
+                  type="button"
+                  class="secondary-button"
+                  (click)="cerrarModalEdicion()"
+                  [disabled]="guardando()"
+                >
+                  Cancelar
+                </button>
+                <button
+                  id="btn-actualizar-autor"
+                  type="submit"
+                  class="primary-button"
+                  [disabled]="guardando()"
+                >
+                  @if (guardando()) {
+                    <span class="btn-spinner" aria-hidden="true"></span>
+                    Guardando...
+                  } @else {
+                    Guardar cambios
+                  }
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    }
+  }
+</section>

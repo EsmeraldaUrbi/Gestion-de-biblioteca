@@ -231,4 +231,71 @@ describe('LibroEditarComponent', () => {
       httpTesting.expectNone(libroUrl);
     });
   });
+
+  // -------------------------------------------------------------------------
+  // Integración con Autores y Categorías (Ticket 3.3 Etapa 4)
+  // -------------------------------------------------------------------------
+  describe('integración con catálogo dinámico de autores y categorías', () => {
+    beforeEach(async () => {
+      await configurar('1');
+    });
+
+    it('debe mantener las asociaciones originales del libro y permitir incorporar autores recién registrados', () => {
+      const filtrosConNuevosRegistros = {
+        autores: [
+          { autor_id: 1, nombre: 'Gabriel García Márquez' },
+          { autor_id: 99, nombre: 'Autor Recién Creado' },
+        ],
+        categorias: [
+          { categoria_id: 1, nombre_categoria: 'Realismo Mágico' },
+          { categoria_id: 77, nombre_categoria: 'Categoría Recién Creada' },
+        ],
+      };
+
+      fixture.detectChanges();
+      httpTesting.expectOne(libroUrl).flush(MOCK_LIBRO);
+      httpTesting.expectOne(catalogoFiltrosUrl).flush(filtrosConNuevosRegistros);
+      fixture.detectChanges();
+
+      // Las asociaciones previas del libro se conservan
+      expect(component.libro()?.autores).toEqual(MOCK_LIBRO.autores);
+      expect(component.libro()?.categorias).toEqual(MOCK_LIBRO.categorias);
+
+      // Y las opciones disponibles reflejan los nuevos registros del catálogo
+      expect(component.autoresDisponibles().some((a) => a.autor_id === 99)).toBe(true);
+      expect(component.categoriasDisponibles().some((c) => c.categoria_id === 77)).toBe(true);
+    });
+
+    it('debe enviar autor_ids y categoria_ids vía PATCH cuando se modifiquen las asociaciones', () => {
+      fixture.detectChanges();
+      httpTesting.expectOne(libroUrl).flush(MOCK_LIBRO);
+      httpTesting.expectOne(catalogoFiltrosUrl).flush(MOCK_FILTROS);
+      fixture.detectChanges();
+
+      const cambiosAsociaciones = {
+        autor_ids: [1, 2],
+        categoria_ids: [1, 2],
+      };
+
+      component.modificar(cambiosAsociaciones);
+
+      const req = httpTesting.expectOne(libroUrl);
+      expect(req.request.method).toBe('PATCH');
+      expect(req.request.body).toEqual(cambiosAsociaciones);
+      req.flush({ ...MOCK_LIBRO, ...cambiosAsociaciones });
+
+      expect(component.libroActualizado()).toBeTruthy();
+    });
+
+    it('no debe perder las asociaciones del libro si el catálogo de opciones está vacío', () => {
+      fixture.detectChanges();
+      httpTesting.expectOne(libroUrl).flush(MOCK_LIBRO);
+      httpTesting.expectOne(catalogoFiltrosUrl).flush({ autores: [], categorias: [] });
+      fixture.detectChanges();
+
+      expect(component.libro()?.autores.length).toBe(1);
+      expect(component.libro()?.categorias.length).toBe(1);
+      expect(component.cargando()).toBe(false);
+    });
+  });
 });

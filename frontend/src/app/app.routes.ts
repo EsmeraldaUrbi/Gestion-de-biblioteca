@@ -159,6 +159,24 @@ export const routes: Routes = [
             (module) => module.LibrosListaComponent,
           ),
       },
+      {
+        path: 'autores',
+        canActivate: [roleGuard],
+        data: { roles: ['bibliotecario'] },
+        loadComponent: () =>
+          import('./features/libros/pages/autores-lista/autores-lista').then(
+            (module) => module.AutoresListaComponent,
+          ),
+      },
+      {
+        path: 'categorias',
+        canActivate: [roleGuard],
+        data: { roles: ['bibliotecario'] },
+        loadComponent: () =>
+          import('./features/libros/pages/categorias-lista/categorias-lista').then(
+            (module) => module.CategoriasListaComponent,
+          ),
+      },
     ],
   },
   {
