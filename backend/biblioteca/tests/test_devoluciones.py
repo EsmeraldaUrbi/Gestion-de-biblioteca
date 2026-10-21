@@ -19,10 +19,21 @@ from biblioteca.models import (
 from biblioteca.repositories.devoluciones_repository import (
     DjangoDevolucionesRepository,
 )
+
 from biblioteca.services.devoluciones_service import (
+    DatosDevolucionInvalidosError,
     DevolucionService,
 )
 
+from concurrent.futures import ThreadPoolExecutor
+from threading import Barrier
+
+from django.db import close_old_connections, connections
+from django.test import TransactionTestCase, skipUnlessDBFeature
+
+from biblioteca.services.devoluciones_service import (
+    PrestamoYaDevueltoError,
+)
 
 class DevolucionesTests(TestCase):
     def setUp(self):
@@ -374,3 +385,148 @@ class DevolucionesTests(TestCase):
         )
 
         self.assertEqual(respuesta.status_code, 403)
+
+    def test_rechaza_devolucion_anterior_al_prestamo(self):
+        prestamo = self.crear_prestamo(dias_retraso=5)
+
+        with self.assertRaises(DatosDevolucionInvalidosError):
+            DevolucionService().registrar_devolucion(
+                prestamo_id=prestamo.prestamo_id,
+                fecha_devolucion=(
+                    prestamo.fecha_prestamo - timedelta(days=1)
+                )
+            )
+
+        prestamo.refresh_from_db()
+        self.assertIsNone(prestamo.fecha_devolucion)
+        self.assertFalse(
+            Sancion.objects.filter(prestamo=prestamo).exists()
+        )
+
+    def test_rechaza_devolucion_con_fecha_futura(self):
+        prestamo = self.crear_prestamo(dias_retraso=5)
+
+        with self.assertRaises(DatosDevolucionInvalidosError):
+            DevolucionService().registrar_devolucion(
+                prestamo_id=prestamo.prestamo_id,
+                fecha_devolucion=self.hoy + timedelta(days=1)
+            )
+
+        prestamo.refresh_from_db()
+        self.assertIsNone(prestamo.fecha_devolucion)
+        self.assertFalse(
+            Sancion.objects.filter(prestamo=prestamo).exists()
+        )
+
+class RepositorioDevolucionSincronizado(
+    DjangoDevolucionesRepository
+):
+    """Sincroniza la lectura inicial de las dos operaciones."""
+
+    def __init__(self, barrera):
+        self.barrera = barrera
+
+    def obtener_prestamo(self, prestamo_id):
+        prestamo = super().obtener_prestamo(prestamo_id)
+
+        # Ambas operaciones leen el préstamo antes de intentar
+        # adquirir los bloqueos de la transacción.
+        self.barrera.wait(timeout=10)
+
+        return prestamo
+
+
+class DevolucionesConcurrentesTests(TransactionTestCase):
+    @skipUnlessDBFeature('has_select_for_update')
+    def test_dos_devoluciones_simultaneas_crean_una_multa(self):
+        hoy = timezone.localdate()
+
+        rol = Rol.objects.create(
+            nombre='estudiante',
+            limite_prestamos_activos=5
+        )
+        usuario = Usuario.objects.create(
+            rol=rol,
+            nombre='Lector concurrencia',
+            email='concurrencia@example.com',
+            contrasena_hash='no-utilizada'
+        )
+        libro = Libro.objects.create(
+            titulo='Libro concurrencia',
+            isbn='9780000000002'
+        )
+        ejemplar = Ejemplar.objects.create(
+            libro=libro,
+            codigo_inventario='DEV-CONC-001',
+            estado=EstadoEjemplar.ACTIVO
+        )
+        prestamo = Prestamo.objects.create(
+            usuario=usuario,
+            ejemplar=ejemplar,
+            fecha_prestamo=hoy - timedelta(days=35),
+            fecha_limite=hoy - timedelta(days=5),
+            fecha_devolucion=None
+        )
+
+        prestamo_id = prestamo.prestamo_id
+        barrera = Barrier(2)
+
+        def intentar_devolucion():
+            close_old_connections()
+
+            try:
+                repository = RepositorioDevolucionSincronizado(
+                    barrera
+                )
+                service = DevolucionService(
+                    repository=repository
+                )
+
+                try:
+                    resultado = service.registrar_devolucion(
+                        prestamo_id=prestamo_id,
+                        fecha_devolucion=hoy
+                    )
+                    return (
+                        'registrada',
+                        resultado['fecha_devolucion']
+                    )
+
+                except PrestamoYaDevueltoError:
+                    return ('rechazada', None)
+
+            finally:
+                # Cada hilo cierra únicamente sus conexiones.
+                connections.close_all()
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            futuros = [
+                executor.submit(intentar_devolucion)
+                for _ in range(2)
+            ]
+            resultados = [
+                futuro.result(timeout=30)
+                for futuro in futuros
+            ]
+
+        self.assertCountEqual(
+            [estado for estado, _ in resultados],
+            ['registrada', 'rechazada']
+        )
+
+        prestamo.refresh_from_db()
+        self.assertEqual(prestamo.fecha_devolucion, hoy)
+
+        fecha_confirmada = next(
+            fecha
+            for estado, fecha in resultados
+            if estado == 'registrada'
+        )
+        self.assertEqual(
+            prestamo.fecha_devolucion,
+            fecha_confirmada
+        )
+
+        sancion = Sancion.objects.get(prestamo=prestamo)
+        self.assertEqual(sancion.tipo, 'ECONOMICA')
+        self.assertEqual(sancion.monto, Decimal('25.00'))

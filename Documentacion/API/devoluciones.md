@@ -4,7 +4,7 @@
 
 - Ticket: 3.6 (3.6.1, 3.6.2, 3.6.3)
 - Responsable: Kaltum Abdala Viveros Gómez (`Kaltum-Viveros`)
-- Estado: Implementado; pendiente de integración con frontend.
+- Estado: Implementado e integrado con frontend; escenarios principales verificados.
 - Fecha de actualización: 2026-10-15
 - Reglas de negocio: RN-05, RN-06, RN-15, RN-20, RN-03, RN-08 y RN-13 a RN-18
 
@@ -117,14 +117,54 @@ No requiere cuerpo de solicitud. Puede enviarse un objeto vacío {}. La fecha de
 - Comando:
 
 ```bash
-docker compose exec backend python manage.py test biblioteca.tests.test_devoluciones
+docker compose -p gestion-de-biblioteca exec backend python manage.py test biblioteca.tests.test_devoluciones --verbosity 2
 ```
 
 - Resultado verificado:
   
-  1. Pruebas del módulo: 14 ejecutadas correctamente en MySQL. Suite completa del backend: 257 pruebas correctas. Pendiente de verificar solicitudes simultáneas e integración con Angular.
+  17 pruebas correctas en MySQL, con las migraciones
+  hasta biblioteca.0008 aplicadas en la base de pruebas.
+
+Se verificó:
+- Devolución en fecha límite sin multa.
+- Cinco días naturales de retraso generan $25.00 MXN.
+- Repetir una devolución conserva la fecha y no duplica sanciones.
+- Dos devoluciones simultáneas registran una sola devolución y multa.
+- Si falla la creación de la multa, se revierte la devolución.
+- Rechazo de fechas anteriores al préstamo o futuras.
+- Restricciones de acceso para estudiantes.
+- Búsqueda de préstamos activos y estimación sin modificar registros.
+- Exclusión de préstamos devueltos en la búsqueda.
+- Conservación de bloqueos existentes y registro de bloqueos pendientes.
+
+### Integración manual con Angular
+
+- Búsqueda y selección de un préstamo activo: verificada.
+- Visualización de fechas, retraso e importe estimado: verificada.
+- Devolución sin multa y resumen de confirmación: verificados.
+- Exclusión del préstamo devuelto al repetir la búsqueda: verificada.
+- Rechazo de devolución repetida mediante Postman: verificado.
+- Devolución con cinco días de retraso y multa de $25.00:
+  confirmada por la responsable durante la prueba manual;
+  sin captura del resumen final.
+
+### Compilación del frontend
+
+Comando:
+
+    docker compose -p gestion-de-biblioteca exec frontend npm run build
+
+Resultado: compilación de producción correcta.
+Se mantiene una advertencia de tamaño de CSS en registro-prestamo,
+sin impedir la compilación.
+
+### Alcance de la verificación
+
+La prueba concurrente cubre dos operaciones del servicio de
+devoluciones con conexiones independientes a MySQL.
+No equivale a una prueba de carga ni a una prueba simultánea
+entre devoluciones, nuevos préstamos y el worker.
 
 ## Dependencias y pendientes
 
-1. **Módulo de Préstamos (Ticket 3.5):** Reutiliza los registros de préstamos existentes creados por la API de registro de préstamos.
-2. **Frontend de Devoluciones (Ticket 3.6.1):** Integración del endpoint con el componente de Angular en `features/prestamos/pages/registro-devolucion`.
+NA
