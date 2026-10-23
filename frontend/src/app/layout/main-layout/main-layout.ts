@@ -74,6 +74,7 @@ export class MainLayoutComponent implements OnInit {
     },
     {
       label: 'Mis sanciones',
+      route: '/sanciones/mias',
       roles: ['estudiante', 'docente'],
       icon: 'fines',
     },
@@ -112,6 +113,12 @@ export class MainLayoutComponent implements OnInit {
       route: '/devoluciones',
       roles: ['bibliotecario'],
       icon: 'returns',
+    },
+    {
+      label: 'Sanciones',
+      route: '/sanciones',
+      roles: ['bibliotecario'],
+      icon: 'fines',
     },
   ];
 

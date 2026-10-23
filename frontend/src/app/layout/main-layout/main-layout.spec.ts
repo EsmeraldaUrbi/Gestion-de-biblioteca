@@ -85,7 +85,7 @@ describe('MainLayoutComponent', () => {
       expect(items.find((i) => i.label === 'Inicio')?.route).toBe('/inicio');
       expect(items.find((i) => i.label === 'Catálogo')?.route).toBe('/catalogo');
       expect(items.find((i) => i.label === 'Mis préstamos')?.route).toBe('/mis-prestamos');
-      expect(items.find((i) => i.label === 'Mis sanciones')?.route).toBeUndefined();
+      expect(items.find((i) => i.label === 'Mis sanciones')?.route).toBe('/sanciones/mias');
 
       // No debe contener módulos administrativos
       expect(labels).not.toContain('Gestión de libros');
@@ -125,10 +125,12 @@ describe('MainLayoutComponent', () => {
         'Usuarios',
         'Préstamos',
         'Devoluciones',
+        'Sanciones',
       ]);
 
       expect(items.find((i) => i.label === 'Autores')?.route).toBe('/autores');
       expect(items.find((i) => i.label === 'Categorías')?.route).toBe('/categorias');
+      expect(items.find((i) => i.label === 'Sanciones')?.route).toBe('/sanciones');
 
       expect(labels).not.toContain('Mis préstamos');
       expect(labels).not.toContain('Mis sanciones');

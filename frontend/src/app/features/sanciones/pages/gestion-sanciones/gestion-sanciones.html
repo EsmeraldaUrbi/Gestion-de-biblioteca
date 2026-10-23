@@ -1,0 +1,64 @@
+<section class="sanctions-page">
+  <header class="page-header">
+    <div>
+      <p class="eyebrow">SGC ADMINISTRATIVO <span>• CIRCULACIÓN Y COBRANZA</span></p>
+      <h1>Gestión de Sanciones y Cobros</h1>
+      <p class="description">Consulta multas y bloqueos, y registra pagos completos realizados en ventanilla.</p>
+    </div>
+    <div class="cashier-badge"><span>▣</span><div><small>VENTANILLA DE COBRO</small><strong>Biblioteca Central</strong></div></div>
+  </header>
+
+  <section class="summary-grid" aria-label="Resumen de sanciones">
+    <article class="summary-card summary-card--danger"><span>Multas pendientes de cobro</span><strong>{{ resumen().multas_pendientes }}</strong><p>{{ formatoMoneda(resumen().monto_pendiente) }} exigibles</p></article>
+    <article class="summary-card"><span>Saldo pendiente</span><strong>{{ formatoMoneda(resumen().monto_pendiente) }}</strong><p>Pagos totales en ventanilla</p></article>
+    <article class="summary-card summary-card--blue"><span>Bloqueos temporales activos</span><strong>{{ resumen().bloqueos_vigentes }}</strong><p>Restricciones vigentes hoy</p></article>
+  </section>
+
+  <section class="filter-panel" aria-label="Filtros de sanciones">
+    <label class="search-field"><span aria-hidden="true">⌕</span><input [formControl]="busqueda" (keyup.enter)="buscar()" placeholder="Buscar por usuario, correo, libro o ejemplar" /><button type="button" (click)="buscar()">Buscar</button></label>
+    <label><span>Tipo</span><select [value]="tipo()" (change)="cambiarTipo($any($event.target).value)"><option value="todos">Todos los tipos</option><option value="ECONOMICA">Multas económicas</option><option value="BLOQUEO">Bloqueos temporales</option></select></label>
+    <label><span>Estado</span><select [value]="estado()" (change)="cambiarEstado($any($event.target).value)"><option value="todos">Todos los estados</option><option value="pendiente">Pendientes</option><option value="pagada">Pagadas</option><option value="vigente">Bloqueos vigentes</option><option value="finalizada">Bloqueos finalizados</option></select></label>
+  </section>
+
+  @if (exito(); as mensaje) { <div class="notice notice--success" role="status">✓ {{ mensaje }}</div> }
+  @if (error(); as mensaje) { <div class="notice notice--error" role="alert">{{ mensaje }} <button type="button" (click)="cargar(pagina())">Reintentar</button></div> }
+
+  <section class="table-section">
+    @if (cargando()) { <div class="state">Cargando sanciones...</div> }
+    @else if (sanciones().length === 0) { <div class="state"><strong>No hay sanciones para mostrar.</strong><p>Ajusta los filtros o intenta con otra búsqueda.</p></div> }
+    @else {
+      <div class="table-scroll"><table>
+        <thead><tr><th>Folio / tipo</th><th>Usuario</th><th>Préstamo / libro</th><th>Importe / período</th><th>Estado</th><th>Acción</th></tr></thead>
+        <tbody>
+          @for (sancion of sanciones(); track sancion.sancion_id) {
+            <tr>
+              <td><strong>#{{ sancion.sancion_id }}</strong><span class="type-label" [class.type-label--block]="sancion.tipo === 'BLOQUEO'">{{ etiquetaTipo(sancion) }}</span></td>
+              <td><strong>{{ sancion.prestamo.usuario.nombre }}</strong><small>{{ sancion.prestamo.usuario.email }}</small></td>
+              <td><strong>Préstamo #{{ sancion.prestamo.prestamo_id }}</strong><small>{{ sancion.prestamo.ejemplar.libro.titulo }}</small><small>Ejemplar: {{ sancion.prestamo.ejemplar.codigo_inventario }}</small></td>
+              <td>
+                @if (sancion.tipo === 'ECONOMICA') { <strong class="amount">{{ formatoMoneda(sancion.monto) }}</strong><small>@if (sancion.fecha_pago) { Pagada: {{ formatoFecha(sancion.fecha_pago) }} } @else { Pendiente de liquidación }</small> }
+                @else { <strong>{{ formatoFecha(sancion.fecha_inicio_bloqueo) }} — {{ formatoFecha(sancion.fecha_fin_bloqueo) }}</strong><small>Período de restricción</small> }
+              </td>
+              <td><span class="status-chip" [class.status-chip--pending]="sancion.estado === 'PENDIENTE'" [class.status-chip--paid]="sancion.estado === 'PAGADA'" [class.status-chip--block]="sancion.estado === 'VIGENTE'">{{ etiquetaEstado(sancion) }}</span></td>
+              <td>@if (esCobrable(sancion)) { <button type="button" class="pay-button" (click)="abrirConfirmacion(sancion)">Registrar pago</button> } @else { <span class="no-action">Sin acción</span> }</td>
+            </tr>
+          }
+        </tbody>
+      </table></div>
+      <footer class="pagination"><span>Mostrando {{ sanciones().length }} de {{ total() }} registros</span><div><button type="button" [disabled]="pagina() === 1 || cargando()" (click)="paginaAnterior()">Anterior</button><span>Página {{ pagina() }}</span><button type="button" [disabled]="pagina() * pageSize >= total() || cargando()" (click)="paginaSiguiente()">Siguiente</button></div></footer>
+    }
+  </section>
+
+  @if (confirmacion(); as sancion) {
+    <div class="modal-backdrop" (click)="cerrarConfirmacion()">
+      <section class="payment-modal" role="dialog" aria-modal="true" aria-labelledby="payment-title" (click)="$event.stopPropagation()">
+        <button type="button" class="close-modal" (click)="cerrarConfirmacion()" [disabled]="registrandoPago()" aria-label="Cerrar">×</button>
+        <p class="modal-icon">▣</p><h2 id="payment-title">Registrar pago de multa</h2><p>Confirma el cobro presencial en ventanilla.</p>
+        <div class="payment-detail"><span>Usuario deudor</span><strong>{{ sancion.prestamo.usuario.nombre }}</strong><span>Folio de sanción</span><strong>#{{ sancion.sancion_id }}</strong><span>Referencia</span><strong>{{ sancion.prestamo.ejemplar.libro.titulo }}</strong></div>
+        <div class="payment-total"><span>Importe total a liquidar</span><strong>{{ formatoMoneda(sancion.monto) }}</strong></div>
+        <p class="modal-note">Este pago liquida exclusivamente esta multa. No modifica otras deudas ni bloqueos temporales.</p>
+        <footer><button type="button" class="cancel-button" (click)="cerrarConfirmacion()" [disabled]="registrandoPago()">Cancelar</button><button type="button" class="confirm-button" (click)="confirmarPago()" [disabled]="registrandoPago()">{{ registrandoPago() ? 'Registrando...' : 'Confirmar registro de pago' }}</button></footer>
+      </section>
+    </div>
+  }
+</section>

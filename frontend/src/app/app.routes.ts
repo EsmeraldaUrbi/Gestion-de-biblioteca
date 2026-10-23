@@ -70,6 +70,15 @@ export const routes: Routes = [
           ),
       },
       {
+        path: 'sanciones/mias',
+        canActivate: [roleGuard],
+        data: { roles: ['estudiante', 'docente'] },
+        loadComponent: () =>
+          import('./features/sanciones/pages/mis-sanciones/mis-sanciones').then(
+            (module) => module.MisSancionesComponent,
+          ),
+      },
+      {
         path: 'prestamos',
         canActivate: [roleGuard],
         data: { roles: ['bibliotecario'] },
@@ -85,6 +94,15 @@ export const routes: Routes = [
         loadComponent: () =>
           import('./features/prestamos/pages/registro-devolucion/registro-devolucion').then(
             (module) => module.RegistroDevolucionComponent,
+          ),
+      },
+      {
+        path: 'sanciones',
+        canActivate: [roleGuard],
+        data: { roles: ['bibliotecario'] },
+        loadComponent: () =>
+          import('./features/sanciones/pages/gestion-sanciones/gestion-sanciones').then(
+            (module) => module.GestionSancionesComponent,
           ),
       },
       {
