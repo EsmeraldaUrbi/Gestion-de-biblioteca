@@ -73,6 +73,14 @@ from biblioteca.presentation.devoluciones_views import (
     PrestamosActivosDevolucionView,
 )
 
+# 3.8 Consulta de sanciones y registro de pagos.
+from biblioteca.presentation.sanciones_views import (
+    MisSancionesView,
+    SancionDetailView,
+    SancionPagoView,
+    SancionesListView,
+)
+
 
 urlpatterns = [
     # -----------------------------------------
@@ -265,5 +273,33 @@ urlpatterns = [
         'devoluciones/prestamos-activos/',
         PrestamosActivosDevolucionView.as_view(),
         name='devoluciones-prestamos-activos'
+    ),
+
+    # -----------------------------------------
+    # 3.8 Sanciones y pagos
+    # -----------------------------------------
+
+    path(
+        'sanciones/mias/',
+        MisSancionesView.as_view(),
+        name='sanciones-mias'
+    ),
+
+    path(
+        'sanciones/',
+        SancionesListView.as_view(),
+        name='sanciones-list'
+    ),
+
+    path(
+        'sanciones/<int:sancion_id>/',
+        SancionDetailView.as_view(),
+        name='sanciones-detail'
+    ),
+
+    path(
+        'sanciones/<int:sancion_id>/pago/',
+        SancionPagoView.as_view(),
+        name='sanciones-pago'
     ),
 ]
