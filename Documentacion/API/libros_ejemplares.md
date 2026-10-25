@@ -4,7 +4,7 @@
 
 - **Ticket:** 3.3 — Gestión de libros y ejemplares (incluye administración de autores y categorías)
 - **Módulo:** Gestión de libros, autores, categorías y ejemplares
-- **Responsables:** `Nava`
+- **Responsables:** Diego Alberto Nava Rivera (`inava404`)
 - **Estado:** Verificado (204 pruebas automatizadas aprobadas)
 - **Fecha de actualización:** 2026-10-19
 - **Reglas de negocio asociadas:** RN-01, RN-02, RN-03, RN-04, RN-19, RN-20

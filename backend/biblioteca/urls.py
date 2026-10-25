@@ -62,6 +62,11 @@ from biblioteca.presentation.mis_prestamos_views import (
     MisPrestamosView,
 )
 
+# 3.9 Consulta personal de sanciones.
+from biblioteca.presentation.mis_sanciones_views import (
+    MisSancionesView,
+)
+
 # 3.6 Registro de devoluciones.
 from biblioteca.presentation.devoluciones_views import (
     DevolucionRegistroView,
@@ -250,13 +255,19 @@ urlpatterns = [
     ),
 
     # -----------------------------------------
-    # 3.5 Consulta personal
+    # 3.5 y 3.9 Consulta personal
     # -----------------------------------------
 
     path(
         'prestamos/mios/',
         MisPrestamosView.as_view(),
         name='prestamos-mios'
+    ),
+
+    path(
+        'sanciones/mias/',
+        MisSancionesView.as_view(),
+        name='sanciones-mias'
     ),
 
     # -----------------------------------------
