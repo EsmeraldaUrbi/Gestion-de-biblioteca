@@ -555,3 +555,39 @@ class MisSancionesApiTests(APITestCase):
         self.assertEqual(resp_put.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
         self.assertEqual(resp_patch.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
         self.assertEqual(resp_del.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    # -------------------------------------------------------------------------
+    # 16. Regresión de resolución de ruta: aislamiento de vistas de 3.9 y 3.8
+    # -------------------------------------------------------------------------
+    def test_resolucion_de_ruta_apunta_a_mis_sanciones_view_especializada(self):
+        """Garantiza que /api/sanciones/mias/ resuelva a mis_sanciones_views y no a sanciones_views."""
+        from django.urls import resolve
+        match = resolve('/api/sanciones/mias/')
+        self.assertEqual(match.url_name, 'sanciones-mias')
+        self.assertEqual(
+            match.func.view_class.__module__,
+            'biblioteca.presentation.mis_sanciones_views',
+        )
+
+    def test_ausencia_de_rutas_duplicadas_para_sanciones_mias(self):
+        """Verifica que el patrón sanciones/mias/ esté registrado exactamente una vez en urlpatterns."""
+        from django.urls import get_resolver
+        resolver = get_resolver()
+
+        def buscar_patrones(patterns, prefix=''):
+            coincidencias = []
+            for pattern in patterns:
+                if hasattr(pattern, 'url_patterns'):
+                    coincidencias.extend(buscar_patrones(pattern.url_patterns, prefix + str(pattern.pattern)))
+                else:
+                    ruta_completa = prefix + str(pattern.pattern)
+                    if 'sanciones/mias/' in ruta_completa:
+                        coincidencias.append(pattern)
+            return coincidencias
+
+        rutas_sanciones_mias = buscar_patrones(resolver.url_patterns)
+        self.assertEqual(
+            len(rutas_sanciones_mias),
+            1,
+            f'Se esperaba 1 registro de sanciones/mias/, pero se encontraron {len(rutas_sanciones_mias)}',
+        )

@@ -64,12 +64,7 @@ from biblioteca.presentation.mis_prestamos_views import (
 
 # 3.9 Consulta personal de sanciones.
 from biblioteca.presentation.mis_sanciones_views import (
-    MisSancionesView,
-)
-
-# 3.6 Registro de devoluciones.
-from biblioteca.presentation.devoluciones_views import (
-    DevolucionRegistroView,
+    MisSancionesView as MisSancionesPersonalView,
 )
 
 # 3.6 Registro de devoluciones.
@@ -80,7 +75,6 @@ from biblioteca.presentation.devoluciones_views import (
 
 # 3.8 Consulta de sanciones y registro de pagos.
 from biblioteca.presentation.sanciones_views import (
-    MisSancionesView,
     SancionDetailView,
     SancionPagoView,
     SancionesListView,
@@ -266,7 +260,7 @@ urlpatterns = [
 
     path(
         'sanciones/mias/',
-        MisSancionesView.as_view(),
+        MisSancionesPersonalView.as_view(),
         name='sanciones-mias'
     ),
 
@@ -289,12 +283,6 @@ urlpatterns = [
     # -----------------------------------------
     # 3.8 Sanciones y pagos
     # -----------------------------------------
-
-    path(
-        'sanciones/mias/',
-        MisSancionesView.as_view(),
-        name='sanciones-mias'
-    ),
 
     path(
         'sanciones/',
