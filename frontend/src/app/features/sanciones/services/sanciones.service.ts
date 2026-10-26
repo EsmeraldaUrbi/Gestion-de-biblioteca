@@ -58,6 +58,12 @@ export class SancionesService {
     );
   }
 
+  /**
+   * @deprecated Legado del ticket 3.8.
+   * La pantalla personal «Mis sanciones» fue migrada a MisSancionesService.listar()
+   * (ticket 3.9). Este método ya no tiene consumidores activos; conservarlo hasta
+   * que el equipo confirme que no existe ninguna otra referencia antes de eliminarlo.
+   */
   obtenerMias(
     page = 1,
     pageSize = 10,
@@ -71,6 +77,7 @@ export class SancionesService {
       },
     );
   }
+
 
   registrarPago(sancionId: number): Observable<Sancion> {
     return this.http.post<Sancion>(

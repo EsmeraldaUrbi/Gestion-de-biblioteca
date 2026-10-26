@@ -1,37 +1,213 @@
 <section class="my-fines-page">
+
+  <!-- ── Encabezado ─────────────────────────────────────── -->
   <header class="page-header">
-    <div><p class="eyebrow">PORTAL ACADÉMICO <span>• CIRCULACIÓN Y SANCIONES</span></p><h1>Mis Sanciones</h1><p>Consulta el estado de tus multas económicas y bloqueos temporales registrados por la Biblioteca Central.</p></div>
+    <div>
+      <p class="eyebrow">PORTAL ACADÉMICO <span>• CIRCULACIÓN Y SANCIONES</span></p>
+      <h1>Mis Sanciones</h1>
+      <p>Consulta el estado de tus multas económicas y bloqueos temporales registrados en la Biblioteca Central.</p>
+    </div>
   </header>
 
+  <!-- ── Tarjetas de resumen ────────────────────────────── -->
   <section class="overview-grid" aria-label="Resumen de sanciones personales">
-    <article class="overview-card overview-card--pending"><span>Adeudo vigente</span><h2>Multas económicas pendientes</h2><strong>{{ formatoMoneda(resumen().monto_pendiente) }}</strong><p>Las multas se liquidan exclusivamente en la ventanilla de la biblioteca.</p></article>
-    <article class="overview-card"><span>Historial contable</span><h2>Multas pagadas</h2><strong>{{ formatoMoneda(resumen().monto_pagado) }}</strong><p>Importe acumulado de pagos registrados.</p></article>
-    <article class="overview-card overview-card--block"><span>Derecho a préstamo</span><h2>Bloqueos temporales</h2><strong>{{ resumen().bloqueos_vigentes }}</strong><p>{{ resumen().bloqueos_vigentes === 0 ? 'No presentas bloqueos vigentes.' : 'Tienes restricciones temporales activas.' }}</p></article>
+    <article class="overview-card">
+      <span>Historial total</span>
+      <h2>Total de sanciones</h2>
+      <strong>{{ resumen().total_sanciones }}</strong>
+      <p>Registros históricos de multas y bloqueos en tu cuenta.</p>
+    </article>
+
+    <article class="overview-card overview-card--pending">
+      <span>Adeudo vigente</span>
+      <h2>Multas pendientes de pago</h2>
+      <strong>{{ formatoMoneda(resumen().monto_total_adeudado) }}</strong>
+      <p>
+        @if (resumen().multas_pendientes === 0) {
+          No tienes multas pendientes.
+        } @else {
+          {{ resumen().multas_pendientes }} multa{{ resumen().multas_pendientes === 1 ? '' : 's' }} por liquidar en ventanilla.
+        }
+      </p>
+    </article>
+
+    <article class="overview-card overview-card--block">
+      <span>Derecho a préstamo</span>
+      <h2>Bloqueos vigentes</h2>
+      <strong>{{ resumen().bloqueos_vigentes }}</strong>
+      <p>
+        @if (resumen().bloqueos_vigentes === 0) {
+          No presentas bloqueos activos.
+        } @else {
+          Tienes restricciones temporales vigentes.
+        }
+      </p>
+    </article>
   </section>
 
+  <!-- ── Filtros ────────────────────────────────────────── -->
   <section class="history">
-    <div class="tabs" aria-label="Filtros de sanciones">
-      <button type="button" [class.active]="filtro() === 'todas'" (click)="cambiarFiltro('todas')">Todas</button>
-      <button type="button" [class.active]="filtro() === 'pendientes'" (click)="cambiarFiltro('pendientes')">Multas pendientes</button>
-      <button type="button" [class.active]="filtro() === 'pagadas'" (click)="cambiarFiltro('pagadas')">Multas pagadas</button>
-      <button type="button" [class.active]="filtro() === 'bloqueos'" (click)="cambiarFiltro('bloqueos')">Bloqueos</button>
-      <button type="button" class="refresh" (click)="cargar()" [disabled]="cargando()">↻ Actualizar</button>
+    <div class="filter-bar">
+      <div class="tabs" role="group" aria-label="Filtrar por tipo de sanción">
+        @for (opcion of opcionesTipo; track opcion.valor) {
+          <button
+            type="button"
+            [id]="'filtro-tipo-' + opcion.valor"
+            [class.active]="filtroTipo() === opcion.valor"
+            [attr.aria-pressed]="filtroTipo() === opcion.valor"
+            (click)="cambiarTipo(opcion.valor)"
+          >{{ opcion.etiqueta }}</button>
+        }
+      </div>
+
+      <div class="estado-tabs" role="group" aria-label="Filtrar por estado">
+        @for (opcion of opcionesEstadoDisponibles(); track opcion.valor) {
+          <button
+            type="button"
+            [id]="'filtro-estado-' + opcion.valor"
+            [class.active]="filtroEstado() === opcion.valor"
+            [attr.aria-pressed]="filtroEstado() === opcion.valor"
+            (click)="cambiarEstado(opcion.valor)"
+          >{{ opcion.etiqueta }}</button>
+        }
+      </div>
+
+      <button
+        type="button"
+        class="refresh"
+        (click)="actualizar()"
+        [disabled]="cargando()"
+        aria-label="Actualizar lista"
+      >↻ Actualizar</button>
     </div>
 
-    @if (cargando()) { <div class="state">Consultando tus sanciones...</div> }
-    @else if (error(); as mensaje) { <div class="state state--error"><strong>No fue posible cargar la consulta</strong><p>{{ mensaje }}</p><button type="button" (click)="cargar()">Reintentar</button></div> }
-    @else if (visibles().length === 0) { <div class="state"><strong>No hay sanciones para mostrar.</strong><p>No tienes registros que coincidan con el filtro seleccionado.</p></div> }
-    @else { <div class="fine-list">
-      @for (sancion of visibles(); track sancion.sancion_id) {
-        <article class="fine-card" [class.fine-card--pending]="sancion.estado === 'PENDIENTE'" [class.fine-card--paid]="sancion.estado === 'PAGADA'" [class.fine-card--block]="sancion.tipo === 'BLOQUEO'">
-          <div class="fine-main"><div class="fine-labels"><span>{{ sancion.tipo === 'ECONOMICA' ? 'MULTA ECONÓMICA POR RETRASO' : 'BLOQUEO TEMPORAL DE PRÉSTAMO' }}</span><small>• Préstamo #{{ sancion.prestamo.prestamo_id }}</small></div><h3>{{ sancion.prestamo.ejemplar.libro.titulo }}</h3><p>Ejemplar {{ sancion.prestamo.ejemplar.codigo_inventario }} — Fecha límite: {{ formatoFecha(sancion.prestamo.fecha_limite) }}</p>
-            @if (sancion.tipo === 'ECONOMICA') { <p class="reason">Multa generada por retraso en la devolución. @if (sancion.fecha_pago) { Pago registrado el {{ formatoFecha(sancion.fecha_pago) }}. } @else { Acude a ventanilla para liquidarla. }</p> }
-            @else { <p class="reason">Período de restricción: {{ formatoFecha(sancion.fecha_inicio_bloqueo) }} al {{ formatoFecha(sancion.fecha_fin_bloqueo) }}.</p> }
+    <!-- Estado de carga -->
+    @if (cargando()) {
+      <div class="state" role="status" aria-live="polite" aria-label="Cargando">
+        <span class="loader" aria-hidden="true"></span>
+        Consultando tus sanciones…
+      </div>
+    }
+
+    <!-- Error -->
+    @else if (error(); as mensaje) {
+      <div class="state state--error" role="alert">
+        <strong>No fue posible cargar la consulta</strong>
+        <p>{{ mensaje }}</p>
+        <button type="button" (click)="actualizar()">Reintentar</button>
+      </div>
+    }
+
+    <!-- Sin sanciones en cuenta (count=0 sin filtros activos) -->
+    @else if (total() === 0 && filtroTipo() === 'todas' && filtroEstado() === 'todos') {
+      <div class="state" role="status">
+        <strong>Sin sanciones registradas</strong>
+        <p>Tu cuenta no presenta multas ni bloqueos. ¡Sigue así!</p>
+      </div>
+    }
+
+    <!-- Sin resultados con los filtros actuales -->
+    @else if (sanciones().length === 0) {
+      <div class="state" role="status">
+        <strong>Sin resultados</strong>
+        <p>No hay sanciones que coincidan con los filtros seleccionados.</p>
+      </div>
+    }
+
+    <!-- Lista de sanciones -->
+    @else {
+      <ul class="fine-list" aria-label="Lista de sanciones">
+        @for (sancion of sanciones(); track sancion.sancion_id) {
+          <li
+            class="fine-card"
+            [class.fine-card--pending]="sancion.estado === 'PENDIENTE'"
+            [class.fine-card--paid]="sancion.estado === 'PAGADA'"
+            [class.fine-card--block]="sancion.tipo === 'BLOQUEO'"
+            [class.fine-card--scheduled]="sancion.estado === 'PROGRAMADO'"
+          >
+            <div class="fine-main">
+              <div class="fine-labels">
+                <span>{{ sancion.tipo === 'ECONOMICA' ? 'MULTA ECONÓMICA' : 'BLOQUEO TEMPORAL' }}</span>
+                <small>• Préstamo #{{ sancion.prestamo_id }}</small>
+              </div>
+
+              @if (sancion.libro) {
+                <h3>{{ sancion.libro.titulo }}</h3>
+                <p>
+                  @if (sancion.ejemplar) {
+                    Ejemplar {{ sancion.ejemplar.codigo_inventario }} —
+                  }
+                  ISBN {{ sancion.libro.isbn }}
+                </p>
+              }
+
+              @if (sancion.tipo === 'ECONOMICA') {
+                <p class="reason">
+                  Multa por retraso en la devolución.
+                  @if (sancion.fecha_pago) {
+                    Pago registrado el {{ formatoFecha(sancion.fecha_pago) }}.
+                  } @else {
+                    Acude a ventanilla para liquidarla.
+                  }
+                </p>
+              } @else {
+                <p class="reason">
+                  Período de restricción: {{ formatoFecha(sancion.fecha_inicio_bloqueo) }} al {{ formatoFecha(sancion.fecha_fin_bloqueo) }}.
+                </p>
+              }
+            </div>
+
+            <div class="fine-side">
+              @if (sancion.tipo === 'ECONOMICA') {
+                <strong aria-label="Importe de la multa">{{ formatoMoneda(sancion.monto) }}</strong>
+              } @else {
+                <strong aria-label="Tipo de sanción">Bloqueo</strong>
+              }
+              <span
+                class="badge"
+                [ngClass]="claseEstado(sancion)"
+                role="status"
+                [attr.aria-label]="'Estado: ' + etiquetaEstado(sancion)"
+              >{{ etiquetaEstado(sancion) }}</span>
+            </div>
+          </li>
+        }
+      </ul>
+
+      <!-- Paginación -->
+      @if (totalPaginas() > 1) {
+        <nav class="pagination" aria-label="Paginación de sanciones">
+          <p class="pagination-info">
+            Mostrando {{ primerRegistro() }}–{{ ultimoRegistro() }} de {{ total() }} resultado{{ total() === 1 ? '' : 's' }}
+          </p>
+          <div class="pagination-controls">
+            <button
+              type="button"
+              class="pagination-btn"
+              (click)="cambiarPagina(pagina() - 1)"
+              [disabled]="pagina() <= 1 || cargando()"
+              aria-label="Página anterior"
+            >‹ Anterior</button>
+
+            <span class="pagination-current" aria-current="page" aria-label="Página actual">
+              Pág. {{ pagina() }} de {{ totalPaginas() }}
+            </span>
+
+            <button
+              type="button"
+              class="pagination-btn"
+              (click)="cambiarPagina(pagina() + 1)"
+              [disabled]="pagina() >= totalPaginas() || cargando()"
+              aria-label="Página siguiente"
+            >Siguiente ›</button>
           </div>
-          <div class="fine-side">@if (sancion.tipo === 'ECONOMICA') { <strong>{{ formatoMoneda(sancion.monto) }}</strong> } @else { <strong>{{ sancion.estado === 'VIGENTE' ? 'Activo' : 'Finalizado' }}</strong> }<span [class.pending]="sancion.estado === 'PENDIENTE'" [class.paid]="sancion.estado === 'PAGADA'">{{ etiquetaEstado(sancion) }}</span></div>
-        </article>
+        </nav>
       }
-    </div> }
+    }
   </section>
-  <footer class="help-note"><strong>¿Tienes dudas sobre tus sanciones?</strong><span>Acude a Circulación y Préstamos con tu credencial universitaria para recibir atención.</span></footer>
+
+  <footer class="help-note">
+    <strong>¿Tienes dudas sobre tus sanciones?</strong>
+    <span>Acude a Circulación y Préstamos con tu credencial universitaria para recibir atención personalizada.</span>
+  </footer>
 </section>
