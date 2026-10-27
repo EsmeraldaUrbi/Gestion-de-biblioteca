@@ -116,7 +116,7 @@ export class MainLayoutComponent implements OnInit {
       icon: 'users',
     },
     {
-      label: 'Préstamos',
+      label: 'Registro de préstamos',
       route: '/prestamos',
       roles: ['bibliotecario'],
       icon: 'admin-loans',
