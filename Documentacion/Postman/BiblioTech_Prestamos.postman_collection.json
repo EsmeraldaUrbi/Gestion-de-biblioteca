@@ -1,0 +1,746 @@
+{
+  "info": {
+    "_postman_id": "535d3231-3da1-4563-ae59-6b0be62c4906",
+    "name": "BiblioTech | Préstamos (registro, listado admin y consulta personal)",
+    "description": "Colección SOLO de préstamos, separada de Autenticación. Primero ejecutar Login bibliotecario y Login estudiante en la colección BiblioTech | Autenticación y roles. Ambas colecciones comparten tokens mediante Postman Globals: bibliotech_token_bibliotecario y bibliotech_token_estudiante. Sin archivo Environment. Variables usuario_id y ejemplar_id son ejemplos: reemplazar por IDs reales antes de elegibilidad o POST. Crear préstamo escribe datos REALES en la base de datos. El listado GET administrativo requiere haber implementado la ampliación en dev.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{bibliotech_token_bibliotecario}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000/api",
+      "type": "string"
+    },
+    {
+      "key": "busqueda",
+      "value": "Esmeralda",
+      "type": "string"
+    },
+    {
+      "key": "usuario_id",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "ejemplar_id",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "02 - Listado administrativo",
+      "item": [
+        {
+          "name": "Todos los préstamos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/prestamos/?estado=todos&page=1&page_size=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "prestamos"
+              ],
+              "query": [
+                {
+                  "key": "estado",
+                  "value": "todos"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "page_size",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Paginación y resumen administrativo\", function () {",
+                  " const data = pm.response.json();",
+                  " pm.expect(data).to.have.property('count');",
+                  " pm.expect(data).to.have.property('results').that.is.an('array');",
+                  " pm.expect(data).to.have.property('resumen');",
+                  " pm.expect(data.resumen).to.have.all.keys('total','en_prestamo','vencidos','devueltos');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "En préstamo (no vencidos)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/prestamos/?estado=en_prestamo",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "prestamos"
+              ],
+              "query": [
+                {
+                  "key": "estado",
+                  "value": "en_prestamo"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Paginación y resumen administrativo\", function () {",
+                  " const data = pm.response.json();",
+                  " pm.expect(data).to.have.property('count');",
+                  " pm.expect(data).to.have.property('results').that.is.an('array');",
+                  " pm.expect(data).to.have.property('resumen');",
+                  " pm.expect(data.resumen).to.have.all.keys('total','en_prestamo','vencidos','devueltos');",
+                  "});",
+                  "pm.test('Solo EN_PRESTAMO',()=>{pm.response.json().results.forEach(x=>pm.expect(x.estado).to.eql('EN_PRESTAMO'))});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Vencidos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/prestamos/?estado=vencidos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "prestamos"
+              ],
+              "query": [
+                {
+                  "key": "estado",
+                  "value": "vencidos"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Paginación y resumen administrativo\", function () {",
+                  " const data = pm.response.json();",
+                  " pm.expect(data).to.have.property('count');",
+                  " pm.expect(data).to.have.property('results').that.is.an('array');",
+                  " pm.expect(data).to.have.property('resumen');",
+                  " pm.expect(data.resumen).to.have.all.keys('total','en_prestamo','vencidos','devueltos');",
+                  "});",
+                  "pm.test('Solo VENCIDO',()=>{pm.response.json().results.forEach(x=>pm.expect(x.estado).to.eql('VENCIDO'))});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Devueltos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/prestamos/?estado=devueltos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "prestamos"
+              ],
+              "query": [
+                {
+                  "key": "estado",
+                  "value": "devueltos"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Paginación y resumen administrativo\", function () {",
+                  " const data = pm.response.json();",
+                  " pm.expect(data).to.have.property('count');",
+                  " pm.expect(data).to.have.property('results').that.is.an('array');",
+                  " pm.expect(data).to.have.property('resumen');",
+                  " pm.expect(data.resumen).to.have.all.keys('total','en_prestamo','vencidos','devueltos');",
+                  "});",
+                  "pm.test('Solo DEVUELTO',()=>{pm.response.json().results.forEach(x=>pm.expect(x.estado).to.eql('DEVUELTO'))});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Búsqueda por nombre, correo, libro, ISBN o ejemplar",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/prestamos/?q={{busqueda}}&estado=todos",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "prestamos"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "{{busqueda}}"
+                },
+                {
+                  "key": "estado",
+                  "value": "todos"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Paginación y resumen administrativo\", function () {",
+                  " const data = pm.response.json();",
+                  " pm.expect(data).to.have.property('count');",
+                  " pm.expect(data).to.have.property('results').that.is.an('array');",
+                  " pm.expect(data).to.have.property('resumen');",
+                  " pm.expect(data.resumen).to.have.all.keys('total','en_prestamo','vencidos','devueltos');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Paginación, 1 registro",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/prestamos/?page=1&page_size=1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "prestamos"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "page_size",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Paginación y resumen administrativo\", function () {",
+                  " const data = pm.response.json();",
+                  " pm.expect(data).to.have.property('count');",
+                  " pm.expect(data).to.have.property('results').that.is.an('array');",
+                  " pm.expect(data).to.have.property('resumen');",
+                  " pm.expect(data.resumen).to.have.all.keys('total','en_prestamo','vencidos','devueltos');",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Sin coincidencias",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/prestamos/?q=SIN_COINCIDENCIAS_987654321",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "prestamos"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "SIN_COINCIDENCIAS_987654321"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });",
+                  "pm.test(\"Paginación y resumen administrativo\", function () {",
+                  " const data = pm.response.json();",
+                  " pm.expect(data).to.have.property('count');",
+                  " pm.expect(data).to.have.property('results').that.is.an('array');",
+                  " pm.expect(data).to.have.property('resumen');",
+                  " pm.expect(data.resumen).to.have.all.keys('total','en_prestamo','vencidos','devueltos');",
+                  "});",
+                  "pm.test('Vacío',()=>{pm.expect(pm.response.json().results).to.have.length(0)});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 - Validaciones y permisos",
+      "item": [
+        {
+          "name": "Rechazar estado desconocido (400)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/prestamos/?estado=cancelados",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "prestamos"
+              ],
+              "query": [
+                {
+                  "key": "estado",
+                  "value": "cancelados"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rechazar página 0 (400)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/prestamos/?page=0",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "prestamos"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rechazar tamaño 51 (400)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/prestamos/?page_size=51",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "prestamos"
+              ],
+              "query": [
+                {
+                  "key": "page_size",
+                  "value": "51"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rechazar campo inesperado (400)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/prestamos/?usuario_id=1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "prestamos"
+              ],
+              "query": [
+                {
+                  "key": "usuario_id",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", function () { pm.response.to.have.status(400); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Estudiante no puede listar (403)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/prestamos/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "prestamos"
+              ],
+              "query": []
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bibliotech_token_estudiante}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", function () { pm.response.to.have.status(403); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Anónimo no puede listar (401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/prestamos/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "prestamos"
+              ],
+              "query": []
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", function () { pm.response.to.have.status(401); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 - Operaciones existentes de préstamos",
+      "item": [
+        {
+          "name": "Buscar lectores",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/prestamos/seleccion/usuarios/?q={{busqueda}}&limite=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "prestamos",
+                "seleccion",
+                "usuarios"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "{{busqueda}}"
+                },
+                {
+                  "key": "limite",
+                  "value": "10"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Evaluar elegibilidad",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/prestamos/elegibilidad/?usuario_id={{usuario_id}}&ejemplar_id={{ejemplar_id}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "prestamos",
+                "elegibilidad"
+              ],
+              "query": [
+                {
+                  "key": "usuario_id",
+                  "value": "{{usuario_id}}"
+                },
+                {
+                  "key": "ejemplar_id",
+                  "value": "{{ejemplar_id}}"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Mis préstamos (lector)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/prestamos/mios/?filtro=todos&page=1&page_size=8",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "prestamos",
+                "mios"
+              ],
+              "query": [
+                {
+                  "key": "filtro",
+                  "value": "todos"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "page_size",
+                  "value": "8"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bibliotech_token_estudiante}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", function () { pm.response.to.have.status(200); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Crear préstamo (CAMBIA DATOS)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/prestamos/",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "prestamos"
+              ],
+              "query": []
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"usuario_id\": \"{{usuario_id}}\",\n  \"ejemplar_id\": \"{{ejemplar_id}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", function () { pm.response.to.have.status(201); });"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

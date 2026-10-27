@@ -1,0 +1,757 @@
+{
+  "info": {
+    "_postman_id": "a1fa89ec-0288-4cf8-b37c-420533f3b8f9",
+    "name": "BiblioTech | Autenticación y roles (3.1)",
+    "description": "Colección independiente, sin archivo Environment. Usa cuentas de seed_auth_demo.py en rama dev. IMPORTANTE: ejecutar primero los logins y dejar logout para el final. Los scripts de login guardan tokens en Postman Globals (bibliotech_token_bibliotecario, bibliotech_token_estudiante, bibliotech_token_docente), compartidos con la colección de préstamos. Los tokens se generan localmente en Postman y no se incluyen en el JSON exportado. Si aún no existen usuarios: docker compose exec backend python manage.py seed_auth_demo.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "00 - Estado",
+      "item": [
+        {
+          "name": "Estado público",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/estado/",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estado responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"La respuesta indica éxito\", () => pm.expect(pm.response.json().status).to.eql(\"success\"));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "01 - Login",
+      "item": [
+        {
+          "name": "Login estudiante",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/auth/login/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email_estudiante}}\",\n  \"password\": \"{{password_demo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Login estudiante responde 200\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Devuelve token Bearer\", () => { pm.expect(json.token).to.be.a(\"string\"); pm.expect(json.tipo_token).to.eql(\"Bearer\"); });",
+                  "pm.test(\"Rol estudiante y límite 5\", () => { pm.expect(json.usuario.rol.nombre).to.eql(\"estudiante\"); pm.expect(json.usuario.rol.limite_prestamos_activos).to.eql(5); });",
+                  "pm.test(\"No expone contraseña\", () => { pm.expect(json.usuario).to.not.have.property(\"contrasena_hash\"); pm.expect(json.usuario).to.not.have.property(\"password\"); });",
+                  "if (pm.response.code === 200 && json.token) pm.globals.set(\"bibliotech_token_estudiante\", json.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login docente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/auth/login/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email_docente}}\",\n  \"password\": \"{{password_demo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Login docente responde 200\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Rol docente y límite 5\", () => { pm.expect(json.usuario.rol.nombre).to.eql(\"docente\"); pm.expect(json.usuario.rol.limite_prestamos_activos).to.eql(5); });",
+                  "if (pm.response.code === 200 && json.token) pm.globals.set(\"bibliotech_token_docente\", json.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login bibliotecario",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/auth/login/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email_bibliotecario}}\",\n  \"password\": \"{{password_demo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Login bibliotecario responde 200\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Rol bibliotecario y límite 0\", () => { pm.expect(json.usuario.rol.nombre).to.eql(\"bibliotecario\"); pm.expect(json.usuario.rol.limite_prestamos_activos).to.eql(0); });",
+                  "if (pm.response.code === 200 && json.token) pm.globals.set(\"bibliotech_token_bibliotecario\", json.token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Password incorrecto",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/auth/login/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email_estudiante}}\",\n  \"password\": \"NoEsLaClave123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Credenciales incorrectas responden 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"No devuelve token\", () => pm.expect(pm.response.json()).to.not.have.property(\"token\"));",
+                  "pm.test(\"Mensaje correcto\", () => pm.expect(pm.response.json().detail).to.eql(\"Credenciales incorrectas.\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Usuario inexistente",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/auth/login/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"noexiste@bibliotech.local\",\n  \"password\": \"{{password_demo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Usuario inexistente responde 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"No revela existencia del correo\", () => pm.expect(pm.response.json().detail).to.eql(\"Credenciales incorrectas.\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Datos incompletos",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/auth/login/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email_estudiante}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Login incompleto responde 400\", () => pm.response.to.have.status(400));",
+                  "pm.test(\"Password es requerido\", () => pm.expect(pm.response.json()).to.have.property(\"password\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Email inválido",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": "{{base_url}}/auth/login/",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"esto-no-es-un-email\",\n  \"password\": \"{{password_demo}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Email inválido responde 400\", () => pm.response.to.have.status(400));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 - Sesión",
+      "item": [
+        {
+          "name": "Me sin token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/auth/me/",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Sin token responde 401\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Me estudiante",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/auth/me/",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bibliotech_token_estudiante}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estudiante autenticado responde 200\", () => pm.response.to.have.status(200));",
+                  "const json = pm.response.json();",
+                  "pm.test(\"Identifica al estudiante\", () => { pm.expect(json.email).to.eql(\"{{email_estudiante}}\"); pm.expect(json.rol.nombre).to.eql(\"estudiante\"); });",
+                  "pm.test(\"No devuelve datos sensibles\", () => { pm.expect(json).to.not.have.property(\"contrasena_hash\"); pm.expect(json).to.not.have.property(\"password\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Me docente",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/auth/me/",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bibliotech_token_docente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Docente autenticado responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Identifica rol docente\", () => pm.expect(pm.response.json().rol.nombre).to.eql(\"docente\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Me bibliotecario",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/auth/me/",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bibliotech_token_bibliotecario}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Bibliotecario autenticado responde 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Identifica rol bibliotecario\", () => pm.expect(pm.response.json().rol.nombre).to.eql(\"bibliotecario\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Token inválido",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/auth/me/",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "TOKEN_TOTALMENTE_INVALIDO_123456789",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Token inválido responde 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"Mensaje de token inválido\", () => pm.expect(pm.response.json().detail).to.eql(\"Token inválido o revocado.\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Bearer mal formado",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer",
+                "type": "text"
+              }
+            ],
+            "url": "{{base_url}}/auth/me/"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Bearer mal formado responde 401\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 - Permisos por rol",
+      "item": [
+        {
+          "name": "Estudiante -> lector",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/auth/access/lector/",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bibliotech_token_estudiante}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estudiante puede acceder a lector\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Docente -> lector",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/auth/access/lector/",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bibliotech_token_docente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Docente puede acceder a lector\", () => pm.response.to.have.status(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Bibliotecario -> lector",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/auth/access/lector/",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bibliotech_token_bibliotecario}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Bibliotecario es rechazado en lector\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Bibliotecario -> bibliotecario",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/auth/access/bibliotecario/",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bibliotech_token_bibliotecario}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Bibliotecario puede acceder\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Mensaje autorizado\", () => pm.expect(pm.response.json().detail).to.eql(\"Acceso autorizado para bibliotecario.\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Estudiante -> bibliotecario",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/auth/access/bibliotecario/",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bibliotech_token_estudiante}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Estudiante es rechazado\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Docente -> bibliotecario",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/auth/access/bibliotecario/",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bibliotech_token_docente}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Docente es rechazado\", () => pm.response.to.have.status(403));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 - Logout y revocación",
+      "item": [
+        {
+          "name": "Logout estudiante",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{base_url}}/auth/logout/",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bibliotech_token_estudiante}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Logout responde 204\", () => pm.response.to.have.status(204));",
+                  "pm.test(\"Logout no devuelve contenido\", () => pm.expect(pm.response.text()).to.eql(\"\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reutilizar token revocado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": "{{base_url}}/auth/me/",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bibliotech_token_estudiante}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Token revocado responde 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"Backend reconoce token revocado\", () => pm.expect(pm.response.json().detail).to.eql(\"Token inválido o revocado.\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Logout sin autenticación",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": "{{base_url}}/auth/logout/",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"Logout sin sesión responde 401\", () => pm.response.to.have.status(401));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8000/api",
+      "type": "string"
+    },
+    {
+      "key": "email_estudiante",
+      "value": "esme@bibliotech.com",
+      "type": "string"
+    },
+    {
+      "key": "email_docente",
+      "value": "saul@bibliotech.com",
+      "type": "string"
+    },
+    {
+      "key": "email_bibliotecario",
+      "value": "kalt@bibliotech.com",
+      "type": "string"
+    },
+    {
+      "key": "password_demo",
+      "value": "Biblioteca123*",
+      "type": "string"
+    }
+  ]
+}
