@@ -1,107 +1,82 @@
-# Contrato de API — Registro de devoluciones y cálculo de multas
+# Plantilla — Contrato de API [nombre del módulo]
+
+> **Instrucciones:** copia este archivo con el nombre del módulo (por ejemplo, `auth.md`) y sustituye los marcadores entre corchetes. No publiques rutas, parámetros, códigos ni datos que no estén implementados. Confirma la información en `backend/biblioteca/urls.py`, en las vistas y en los serializers correspondientes. Elimina las instrucciones antes de aprobar el contrato.
 
 ## Información general
 
-- Ticket: 3.6 (3.6.1, 3.6.2, 3.6.3)
-- Responsable: Kaltum Abdala Viveros Gómez (`Kaltum-Viveros`)
-- Estado: Propuesto
-- Fecha de actualización: 2026-10-15
-- Reglas de negocio: RN-05, RN-06, RN-15, RN-20
+- **Módulo y ticket:** [3.x / issue].
+- **Responsable:** [persona o equipo].
+- **Estado y fecha de actualización:** [implementado/verificado; AAAA-MM-DD].
+- **URL base:** `/api/`.
+- **Autenticación:** [Bearer obligatorio / endpoint público].
+- **Roles autorizados:** [roles exactos].
+- **Formato:** JSON; fechas `YYYY-MM-DD` y fechas-hora ISO 8601 si aplican.
+- **Reglas de negocio:** [RN-XX, P-XX].
 
-## Endpoints
+## Endpoints implementados
 
 | Método | Ruta | Descripción | Roles |
 |---|---|---|---|
-| POST | `/api/prestamos/{prestamo_id}/devolucion/` | Registrar devolución física y calcular multa por retraso | bibliotecario |
+| [GET/POST/PATCH/PUT] | `/api/[recurso]/` | [operación] | [rol] |
 
-## Detalle de operaciones
+## 1. [MÉTODO] `/api/[recurso]/`
 
-### POST `/api/prestamos/{prestamo_id}/devolucion/`
+**Propósito:** [qué resuelve la operación y si modifica datos].
 
-**Propósito:**
+**Autenticación y autorización:** [cabecera / roles / permiso Django].
 
-Registrar la fecha real de devolución de un ejemplar prestado, actualizar el estado operativo del ejemplar a `ACTIVO` y generar automáticamente una sanción económica si el préstamo superó la fecha límite acordada.
+**Parámetros:** [ruta, query y valores predeterminados; indicar cuando no aplica].
 
-**Autenticación y autorización:**
+| Nombre | Ubicación | Tipo | Obligatorio | Validación |
+|---|---|---|---|---|
+| `[campo]` | [path/query/body] | [tipo] | [sí/no] | [regla] |
 
-- Cabecera: `Authorization: Bearer <token>`
-- Requiere autenticación mediante token Bearer y rol `bibliotecario` (`IsBibliotecario`).
-
-**Parámetros:**
-
-| Parámetro | Tipo | Obligatorio | Descripción |
-|---|---|---|---|
-| `prestamo_id` | Entero positivo | Sí | Identificador numérico único del préstamo a devolver |
-
-**Solicitud JSON:**
-
-No requiere cuerpo de solicitud para la operación regular en producción (asume la fecha actual del servidor). Para pruebas de aceptación permite enviar opcionalmente la fecha de devolución:
+**Solicitud:** [sin cuerpo / objeto JSON exacto].
 
 ```json
 {
-  "fecha_devolucion": "2026-10-15"
+  "campo_de_ejemplo": "valor_ilustrativo"
 }
 ```
 
-**Respuesta exitosa:**
-
-- Código HTTP: 200 OK
-- Estructura JSON (Devolución a tiempo):
+**Respuesta exitosa:** HTTP `[200/201/204]` — [explicación]. Si es `204`, indicar que **no devuelve cuerpo**.
 
 ```json
 {
-  "mensaje": "Devolución registrada correctamente.",
-  "prestamo_id": 15,
-  "fecha_devolucion": "2026-10-15",
-  "dias_retraso": 0,
-  "monto_multa": "0.00",
-  "sancion_generada": false,
-  "ejemplar_estado": "ACTIVO"
+  "campo_de_respuesta": "valor_ilustrativo"
 }
 ```
 
-- Estructura JSON (Devolución con retraso):
+**Errores:**
 
-```json
-{
-  "mensaje": "Devolución registrada con retraso. Multa generada.",
-  "prestamo_id": 15,
-  "fecha_devolucion": "2026-10-15",
-  "dias_retraso": 5,
-  "monto_multa": "25.00",
-  "sancion_generada": true,
-  "sancion_id": 4,
-  "ejemplar_estado": "ACTIVO"
-}
-```
+| HTTP | Condición | Ejemplo de estructura |
+|---|---|---|
+| `400` | [campo o formato inválido] | `{ "campo": ["Mensaje de validación."] }` |
+| `401` | [sin autenticación válida] | `{ "detail": "..." }` |
+| `403` | [rol no permitido] | `{ "detail": "..." }` |
+| `404` | [recurso inexistente] | `{ "detail": "..." }` |
+| `409` | [conflicto de negocio, solo cuando corresponda] | `{ "codigo": "...", "detail": "..." }` |
 
-**Errores esperados:**
+Eliminar los códigos que no apliquen; mantener los mensajes literales solo cuando coincidan con el backend. Para campos opcionales, documentar explícitamente sus valores por defecto y el comportamiento de campos desconocidos.
 
-| HTTP | Condición |
-|---|---|
-| 400 | El préstamo ya cuenta con una `fecha_devolucion` registrada (intento de duplicación / idempotencia) |
-| 401 | Petición anónima, cabecera `Authorization` ausente o token inválido |
-| 403 | Usuario autenticado cuyo rol no es `bibliotecario` |
-| 404 | No existe ningún préstamo con el `prestamo_id` indicado |
+## Reglas de negocio y consistencia
 
-## Reglas de negocio
+- [Políticas aplicables, validaciones, transacciones o idempotencia].
+- [Distinguir consultas GET de operaciones que modifican registros].
+- [No documentar datos enviados por el cliente cuando el servidor los calcula o prohíbe; por ejemplo, la fecha real de devolución].
 
-1. **Cálculo de multas (RN-15):** Se cobran $5.00 MXN por cada día transcurrido después de la `fecha_limite`. Si la devolución se realiza dentro del plazo, el monto generado es de $0.00 MXN y no se crea registro de sanción.
-2. **Garantía de idempotencia:** Reintentar la devolución sobre un préstamo que ya posee `fecha_devolucion` rechaza la operación con `HTTP 400 Bad Request`, garantizando que no se dupliquen sanciones ni se alteren las fechas originales.
-3. **Liberación del ejemplar:** Al procesar exitosamente la devolución, el estado del `Ejemplar` asociado al préstamo cambia automáticamente a `ACTIVO` para permitir su disponibilidad en el catálogo.
+## Pruebas e integración
 
-## Pruebas
+- **Backend:** `[ruta del archivo de pruebas]`.
+- **Frontend:** `[servicio Angular que utiliza la ruta]`.
+- **Pruebas ejecutadas:** [comandos y resultado real; no inventar verificaciones].
+- **Dependencias y pendientes:** [módulos y decisiones de integración].
 
-- Archivo: `backend/biblioteca/tests/test_devoluciones.py`
-- Comando:
+## Lista de revisión antes de publicar
 
-```bash
-docker compose exec backend python manage.py test biblioteca.tests.test_devoluciones
-```
-
-- Resultado verificado: Pendiente de ejecución tras implementación del backend (3.6.2).
-
-## Dependencias y pendientes
-
-1. **Módulo de Préstamos (Ticket 3.5):** Reutiliza los registros de préstamos existentes creados por la API de registro de préstamos.
-2. **Frontend de Devoluciones (Ticket 3.6.1):** Integración del endpoint con el componente de Angular en `features/prestamos/pages/registro-devolucion`.
+- [ ] Todas las rutas y métodos existen en `urls.py` y la vista correspondiente.
+- [ ] Parámetros y validaciones coinciden con serializers y servicios.
+- [ ] Ejemplos JSON tienen sintaxis válida y campos reales.
+- [ ] Respuestas HTTP y roles coinciden con el backend.
+- [ ] No hay contraseñas, tokens válidos ni datos personales reales.
+- [ ] El contrato está enlazado desde `Documentacion/API/README.md`.
