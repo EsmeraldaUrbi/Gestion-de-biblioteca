@@ -54,7 +54,9 @@ export class GestionSancionesComponent implements OnInit {
   readonly exito = signal<string | null>(null);
 
   readonly tipo = signal<TipoSancion | 'todos'>('todos');
-  readonly estado = signal<FiltroEstadoSancion>('pendiente');
+  // La consulta administrativa debe mostrar multas y bloqueos al entrar.
+  // "pendiente" solo contempla multas económicas y ocultaba los bloqueos.
+  readonly estado = signal<FiltroEstadoSancion>('todos');
   readonly pagina = signal(1);
   readonly total = signal(0);
   readonly pageSize = 10;

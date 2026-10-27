@@ -25,8 +25,8 @@ class Command(BaseCommand):
             'Estadística para ingeniería', 'Sistemas operativos',
         ]
         categorias = ['Computación', 'Ingeniería', 'Ciencias', 'Literatura', 'Diseño']
-        autores = ['Ana Rivera (demo)', 'Luis Torres (demo)', 'María Luna (demo)',
-                   'Carlos Vega (demo)', 'Sofía Montes (demo)']
+        autores = ['Ana Rivera', 'Luis Torres', 'María Luna',
+                   'Carlos Vega', 'Sofía Montes']
         # Completar solo datos demo faltantes, sin sobrescribir valores existentes.
         for indice, nombre in enumerate(autores):
             autor = Autor.objects.filter(nombre=nombre).first()
