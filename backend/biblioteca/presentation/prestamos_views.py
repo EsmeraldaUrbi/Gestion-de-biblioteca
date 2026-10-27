@@ -1,4 +1,5 @@
 from rest_framework import status
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -14,6 +15,15 @@ from biblioteca.presentation.prestamos_serializers import (
     ElegibilidadPrestamoSerializer,
     PrestamoRegistroSerializer,
     PrestamoSolicitudSerializer,
+)
+
+from biblioteca.presentation.prestamos_admin_serializers import (
+    PrestamosAdminConsultaSerializer,
+    PrestamoAdminSerializer,
+)
+
+from biblioteca.services.prestamos_admin_service import (
+    PrestamosAdminService,
 )
 
 from biblioteca.services.prestamos_service import (
@@ -47,28 +57,22 @@ ERRORES_CONFLICTO = (
 
 def respuesta_error_prestamo(error):
     """
-    Convierte errores conocidos del servicio en
-    respuestas HTTP consistentes.
+    Convierte errores conocidos del servicio
+    en respuestas HTTP consistentes.
 
     Los errores inesperados no deben ocultarse.
     """
 
-    if isinstance(
-        error,
-        ERRORES_NO_ENCONTRADOS
-    ):
+    if isinstance(error, ERRORES_NO_ENCONTRADOS):
         codigo_http = status.HTTP_404_NOT_FOUND
 
     elif isinstance(
         error,
-        IdentificadorPrestamoInvalidoError
+        IdentificadorPrestamoInvalidoError,
     ):
         codigo_http = status.HTTP_400_BAD_REQUEST
 
-    elif isinstance(
-        error,
-        ERRORES_CONFLICTO
-    ):
+    elif isinstance(error, ERRORES_CONFLICTO):
         codigo_http = status.HTTP_409_CONFLICT
 
     else:
@@ -79,15 +83,13 @@ def respuesta_error_prestamo(error):
             'codigo': error.codigo,
             'detail': str(error),
         },
-        status=codigo_http
+        status=codigo_http,
     )
 
 
 class PrestamoBaseView(APIView):
     """
-    Base de las operaciones administrativas de préstamos.
-
-    Solo los bibliotecarios autenticados pueden acceder.
+    Operaciones administrativas de préstamos.
     """
 
     permission_classes = [
@@ -99,8 +101,6 @@ class PrestamoBaseView(APIView):
 class BusquedaLectoresView(PrestamoBaseView):
     """
     GET /api/prestamos/seleccion/usuarios/
-
-    Busca estudiantes y docentes por nombre o correo.
     """
 
     def get(self, request):
@@ -108,9 +108,7 @@ class BusquedaLectoresView(PrestamoBaseView):
             data=dict(request.query_params.items())
         )
 
-        serializer.is_valid(
-            raise_exception=True
-        )
+        serializer.is_valid(raise_exception=True)
 
         datos = serializer.validated_data
 
@@ -118,7 +116,7 @@ class BusquedaLectoresView(PrestamoBaseView):
 
         usuarios = service.buscar_lectores(
             termino=datos['q'],
-            limite=datos['limite']
+            limite=datos['limite'],
         )
 
         return Response(
@@ -126,18 +124,16 @@ class BusquedaLectoresView(PrestamoBaseView):
                 'count': len(usuarios),
                 'results': UsuarioSerializer(
                     usuarios,
-                    many=True
+                    many=True,
                 ).data,
             },
-            status=status.HTTP_200_OK
+            status=status.HTTP_200_OK,
         )
 
 
 class PrestamoElegibilidadView(PrestamoBaseView):
     """
     GET /api/prestamos/elegibilidad/
-
-    Evalúa las condiciones sin registrar un préstamo.
     """
 
     def get(self, request):
@@ -145,9 +141,7 @@ class PrestamoElegibilidadView(PrestamoBaseView):
             data=dict(request.query_params.items())
         )
 
-        serializer.is_valid(
-            raise_exception=True
-        )
+        serializer.is_valid(raise_exception=True)
 
         datos = serializer.validated_data
 
@@ -156,13 +150,13 @@ class PrestamoElegibilidadView(PrestamoBaseView):
         try:
             resultado = service.evaluar_elegibilidad(
                 usuario_id=datos['usuario_id'],
-                ejemplar_id=datos['ejemplar_id']
+                ejemplar_id=datos['ejemplar_id'],
             )
 
         except (
             UsuarioPrestamoNoEncontradoError,
             EjemplarPrestamoNoEncontradoError,
-            IdentificadorPrestamoInvalidoError
+            IdentificadorPrestamoInvalidoError,
         ) as error:
             return respuesta_error_prestamo(error)
 
@@ -170,25 +164,77 @@ class PrestamoElegibilidadView(PrestamoBaseView):
             ElegibilidadPrestamoSerializer(
                 resultado
             ).data,
-            status=status.HTTP_200_OK
+            status=status.HTTP_200_OK,
         )
+
+
+class PrestamosAdminPagination(PageNumberPagination):
+    """
+    Paginación de la consulta administrativa.
+    """
+
+    page_size = 10
+    page_size_query_param = 'page_size'
+    max_page_size = 50
 
 
 class PrestamosRegistroView(PrestamoBaseView):
     """
-    POST /api/prestamos/
+    GET /api/prestamos/
+        Listar y filtrar préstamos administrativos.
 
-    Registra un préstamo aplicando las reglas del servicio.
+    POST /api/prestamos/
+        Registrar un préstamo nuevo.
+
+    Ambos métodos requieren rol bibliotecario.
     """
+
+    def get(self, request):
+        parametros = PrestamosAdminConsultaSerializer(
+            data=dict(request.query_params.items())
+        )
+
+        parametros.is_valid(raise_exception=True)
+
+        datos = parametros.validated_data
+
+        service = PrestamosAdminService()
+
+        prestamos, resumen, hoy = service.consultar(
+            estado=datos['estado'],
+            termino=datos['q'],
+        )
+
+        paginador = PrestamosAdminPagination()
+
+        pagina = paginador.paginate_queryset(
+            prestamos,
+            request,
+            view=self,
+        )
+
+        serializer = PrestamoAdminSerializer(
+            pagina,
+            many=True,
+            context={
+                'hoy': hoy,
+            },
+        )
+
+        respuesta = paginador.get_paginated_response(
+            serializer.data
+        )
+
+        respuesta.data['resumen'] = resumen
+
+        return respuesta
 
     def post(self, request):
         serializer = PrestamoSolicitudSerializer(
             data=request.data
         )
 
-        serializer.is_valid(
-            raise_exception=True
-        )
+        serializer.is_valid(raise_exception=True)
 
         datos = serializer.validated_data
 
@@ -197,7 +243,7 @@ class PrestamosRegistroView(PrestamoBaseView):
         try:
             prestamo = service.registrar_prestamo(
                 usuario_id=datos['usuario_id'],
-                ejemplar_id=datos['ejemplar_id']
+                ejemplar_id=datos['ejemplar_id'],
             )
 
         except (
@@ -209,7 +255,7 @@ class PrestamosRegistroView(PrestamoBaseView):
             EjemplarNoDisponibleError,
             EjemplarOcupadoError,
             AdeudoPendienteError,
-            BloqueoVigenteError
+            BloqueoVigenteError,
         ) as error:
             return respuesta_error_prestamo(error)
 
@@ -217,5 +263,5 @@ class PrestamosRegistroView(PrestamoBaseView):
             PrestamoRegistroSerializer(
                 prestamo
             ).data,
-            status=status.HTTP_201_CREATED
+            status=status.HTTP_201_CREATED,
         )

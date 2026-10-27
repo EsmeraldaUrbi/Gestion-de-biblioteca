@@ -1,37 +1,183 @@
-# Contrato de API — Registro de préstamos y elegibilidad
+
+# Contrato de API — Préstamos
 
 ## Información general
 
-- **Módulos:** 3.5 (registro de préstamos), 3.7 (bloqueo temporal por retraso).
-- **Entregable:** 2.4 — Contratos de API.
-- **Backend:** Django REST Framework; **URL base:** `/api/`.
-- **Autenticación:** `Authorization: Bearer <token>`.
-- **Rol autorizado para las tres operaciones:** `bibliotecario`.
-- **Formato:** JSON; fechas `YYYY-MM-DD`.
-- **Reglas relacionadas:** RN-02, RN-03, RN-08 a RN-12, RN-18, P-01, P-02, P-04 y P-05.
+- Módulo: 3.5 — Préstamos.
+- Documentación: 2.4 — Contratos de API.
+- Backend: Django REST Framework.
+- URL base: `/api/`.
+- Autenticación: `Authorization: Bearer <token>`.
+- Formato: JSON.
+- Fechas: `YYYY-MM-DD`.
+- Reglas relacionadas: RN-02, RN-03, RN-08 a RN-12, RN-18, P-01, P-02, P-04 y P-05.
 
-No modifica el catálogo ni las devoluciones. La evaluación GET es informativa; la creación POST vuelve a validar las condiciones.
+Todas las operaciones administrativas requieren el rol
+`bibliotecario`.
+
+El registro y la consulta administrativa comparten la
+ruta `/api/prestamos/`, utilizando métodos HTTP distintos.
+
+La consulta no modifica registros, fechas ni sanciones.
 
 ## Endpoints
 
 | Método | Ruta | Descripción |
 |---|---|---|
-| GET | `/api/prestamos/seleccion/usuarios/` | Buscar estudiantes y docentes por nombre o correo |
-| GET | `/api/prestamos/elegibilidad/` | Validar lector y ejemplar sin registrar un préstamo |
-| POST | `/api/prestamos/` | Registrar un préstamo si todas las condiciones se cumplen |
+| GET | `/api/prestamos/` | Consultar todos los préstamos |
+| POST | `/api/prestamos/` | Registrar un préstamo |
+| GET | `/api/prestamos/seleccion/usuarios/` | Buscar lectores |
+| GET | `/api/prestamos/elegibilidad/` | Consultar elegibilidad |
 
-## 1. GET `/api/prestamos/seleccion/usuarios/`
+La consulta personal de estudiantes y docentes se
+documenta por separado en `mis_prestamos.md`.
 
-Ejemplo: `/api/prestamos/seleccion/usuarios/?q=Ana&limite=10`.
+---
 
-| Parámetro | Tipo | Regla |
+## 1. GET /api/prestamos/
+
+### Propósito
+
+Permite al bibliotecario consultar los préstamos
+registrados de todos los estudiantes y docentes.
+
+La consulta admite búsqueda, filtrado por estado
+y paginación.
+
+Es una operación exclusivamente de lectura.
+
+### Autenticación
+
+Requiere token Bearer vigente y rol `bibliotecario`.
+
+### Parámetros
+
+| Parámetro | Tipo | Descripción |
 |---|---|---|
-| `q` | Texto, obligatorio | No vacío; entre 1 y 100 caracteres, después de recortar espacios |
-| `limite` | Entero, opcional | Entre 1 y 20; predeterminado `10` |
+| `q` | Texto opcional | Busca por nombre, correo, libro, ISBN, código de ejemplar o folio exacto |
+| `estado` | Texto opcional | `todos`, `en_prestamo`, `vencidos`, `devueltos` |
+| `page` | Entero positivo | Número de página; predeterminado 1 |
+| `page_size` | Entero de 1 a 50 | Registros por página; predeterminado 10 |
 
-Busca por nombre o correo (sin distinguir mayúsculas/minúsculas); únicamente incluye `estudiante` y `docente`.
+El parámetro `q` admite hasta 100 caracteres.
+La búsqueda no distingue mayúsculas y minúsculas.
 
-**HTTP 200:**
+No se admiten parámetros desconocidos.
+
+### Estados calculados
+
+- `EN_PRESTAMO`: `fecha_devolucion` es nula y
+  `fecha_limite` es mayor o igual que hoy.
+- `VENCIDO`: `fecha_devolucion` es nula y
+  `fecha_limite` es anterior a hoy.
+- `DEVUELTO`: `fecha_devolucion` contiene una fecha.
+
+Un préstamo vencido sigue siendo activo hasta que
+se registre su devolución.
+
+El estado no se guarda en una columna adicional;
+se calcula al consultar.
+
+### Ejemplo de solicitud
+
+GET `/api/prestamos/?estado=vencidos&page=1&page_size=10`
+
+### Ejemplo HTTP 200
+
+```json
+{
+  "count": 1,
+  "next": null,
+  "previous": null,
+  "results": [
+    {
+      "prestamo_id": 15,
+      "usuario": {
+        "usuario_id": 5,
+        "nombre": "Ana Pérez",
+        "email": "ana@example.com",
+        "rol": "estudiante"
+      },
+      "libro": {
+        "libro_id": 3,
+        "titulo": "Ingeniería de Software",
+        "isbn": "9780000000456"
+      },
+      "ejemplar": {
+        "ejemplar_id": 12,
+        "codigo_inventario": "EJ-012"
+      },
+      "fecha_prestamo": "2026-09-01",
+      "fecha_limite": "2026-10-01",
+      "fecha_devolucion": null,
+      "estado": "VENCIDO",
+      "dias_restantes": 0
+    }
+  ],
+  "resumen": {
+    "total": 20,
+    "en_prestamo": 8,
+    "vencidos": 3,
+    "devueltos": 9
+  }
+}
+```
+
+Los identificadores, fechas y cantidades son ilustrativos.
+
+### Interpretación del resultado
+
+- `count`: número de registros que coinciden con los filtros.
+- `next`: URL de la página siguiente, o `null`.
+- `previous`: URL de la página anterior, o `null`.
+- `results`: préstamos de la página solicitada.
+- `resumen`: conteos generales de toda la biblioteca.
+
+El resumen no depende del filtro ni de la página.
+
+Los registros se ordenan por fecha de préstamo
+descendente y, después, por identificador descendente.
+
+El campo `dias_restantes` es:
+
+- Un entero positivo o cero para préstamos sin devolver.
+- Cero si el préstamo ya está vencido.
+- `null` cuando el préstamo fue devuelto.
+
+### Búsqueda sin resultados
+
+Devuelve HTTP 200 con `count: 0` y `results: []`.
+El resumen general continúa mostrando las cantidades
+de toda la biblioteca.
+
+### Errores
+
+| HTTP | Causa |
+|---|---|
+| 400 | Filtro, página, tamaño o parámetro desconocido |
+| 401 | Usuario sin token válido |
+| 403 | Estudiante o docente intenta consultar |
+| 404 | Página de resultados inexistente |
+| 405 | Método HTTP no permitido |
+
+---
+
+## 2. GET /api/prestamos/seleccion/usuarios/
+
+Busca estudiantes y docentes por nombre o correo.
+
+### Parámetros
+
+| Parámetro | Regla |
+|---|---|
+| `q` | Obligatorio, de 1 a 100 caracteres y no vacío |
+| `limite` | Opcional, entero de 1 a 20; predeterminado 10 |
+
+### Ejemplo
+
+GET `/api/prestamos/seleccion/usuarios/?q=Ana&limite=10`
+
+### Respuesta HTTP 200
 
 ```json
 {
@@ -39,8 +185,8 @@ Busca por nombre o correo (sin distinguir mayúsculas/minúsculas); únicamente 
   "results": [
     {
       "usuario_id": 5,
-      "nombre": "Lector de ejemplo",
-      "email": "lector@example.com",
+      "nombre": "Ana Pérez",
+      "email": "ana@example.com",
       "direccion": null,
       "telefono": null,
       "rol": {
@@ -53,42 +199,37 @@ Busca por nombre o correo (sin distinguir mayúsculas/minúsculas); únicamente 
 }
 ```
 
-Sin coincidencias: `{"count":0,"results":[]}`. Errores de parámetros: `400`.
+Sin coincidencias devuelve `results: []`.
 
-## 2. GET `/api/prestamos/elegibilidad/`
+Los parámetros inválidos producen HTTP 400.
 
-Ejemplo: `/api/prestamos/elegibilidad/?usuario_id=5&ejemplar_id=2`.
+---
 
-| Parámetro | Tipo | Regla |
-|---|---|---|
-| `usuario_id` | Entero | Obligatorio, mayor que cero |
-| `ejemplar_id` | Entero | Obligatorio, mayor que cero |
+## 3. GET /api/prestamos/elegibilidad/
 
-La respuesta es de **solo lectura**: no crea préstamos ni sanciones. Comprueba el rol, el estado operativo del ejemplar, si ya tiene un préstamo activo, el cupo del lector, multas pendientes y bloqueos vigentes. Las fechas de un préstamo potencial se calculan en el servidor para 30 días naturales.
+Evalúa las condiciones para registrar un préstamo.
+No crea ni modifica préstamos ni sanciones.
 
-**HTTP 200, ejemplo de préstamo rechazado por bloqueo:**
+### Parámetros obligatorios
+
+- `usuario_id`: entero positivo.
+- `ejemplar_id`: entero positivo.
+
+### Ejemplo
+
+GET `/api/prestamos/elegibilidad/?usuario_id=5&ejemplar_id=12`
+
+### Ejemplo HTTP 200
 
 ```json
 {
-  "elegible": false,
-  "motivos": [
-    {
-      "codigo": "BLOQUEO_VIGENTE",
-      "mensaje": "El usuario tiene un bloqueo temporal vigente."
-    }
-  ],
-  "bloqueos_vigentes": [
-    {
-      "prestamo_id": 1,
-      "motivo": "Retraso en la devolución de un préstamo.",
-      "fecha_inicio": "2026-10-04",
-      "fecha_fin": "2026-11-02"
-    }
-  ],
+  "elegible": true,
+  "motivos": [],
+  "bloqueos_vigentes": [],
   "usuario": {
     "usuario_id": 5,
-    "nombre": "Lector de ejemplo",
-    "email": "lector@example.com",
+    "nombre": "Ana Pérez",
+    "email": "ana@example.com",
     "direccion": null,
     "telefono": null,
     "rol": {
@@ -98,43 +239,66 @@ La respuesta es de **solo lectura**: no crea préstamos ni sanciones. Comprueba 
     }
   },
   "ejemplar": {
-    "ejemplar_id": 2,
-    "libro_id": 1,
+    "ejemplar_id": 12,
+    "libro_id": 3,
     "libro": {
-      "libro_id": 1,
-      "titulo": "Libro de ejemplo",
-      "isbn": "9780000000001"
+      "libro_id": 3,
+      "titulo": "Ingeniería de Software",
+      "isbn": "9780000000456"
     },
-    "codigo_inventario": "EJ-002",
+    "codigo_inventario": "EJ-012",
     "estado": "ACTIVO"
   },
-  "prestamos_activos": 1,
+  "prestamos_activos": 2,
   "limite_prestamos_activos": 5,
-  "fecha_prestamo": "2026-10-19",
-  "fecha_limite": "2026-11-18"
+  "fecha_prestamo": "2026-10-27",
+  "fecha_limite": "2026-11-26"
 }
 ```
 
-Todos los valores son ilustrativos; las fechas del bloqueo corresponden al préstamo que lo originó. Una solicitud elegible tiene `elegible: true`, `motivos: []` y `bloqueos_vigentes: []` cuando no existen bloqueos vigentes. La respuesta incluye **como máximo un motivo principal de rechazo**, según el orden de validación, pero puede incluir el listado de bloqueos aunque el motivo principal sea otro (por ejemplo, ejemplar ocupado).
+Los valores son ilustrativos.
 
-`bloqueos_vigentes` muestra tanto sanciones `BLOQUEO` existentes como restricciones que ya corresponden por retraso pero todavía no han sido registradas por el worker. Por ello, **una lista no vacía no implica necesariamente que ya exista una fila en `Sancion`**.
+### Reglas comprobadas
 
-**Errores:** `400` si los parámetros son inválidos o hay campos desconocidos; `404` si el usuario o ejemplar no existe; `401` sin token válido y `403` sin permiso de bibliotecario.
+1. El usuario debe ser estudiante o docente.
+2. El ejemplar debe existir y estar `ACTIVO`.
+3. El ejemplar no puede tener un préstamo activo.
+4. El usuario no debe haber alcanzado su límite.
+5. El usuario no debe tener multas pendientes de pago.
+6. El usuario no debe tener bloqueos temporales vigentes,
+   incluidos los que ya corresponden por retraso.
 
-## 3. POST `/api/prestamos/`
+Cuando falla alguna condición de negocio, responde
+HTTP 200 con `elegible: false` y un motivo de rechazo.
 
-**Solicitud JSON:**
+Los identificadores inválidos producen 400 y los
+recursos inexistentes producen 404.
+
+`bloqueos_vigentes` puede incluir bloqueos ya registrados
+o bloqueos derivados de un retraso que todavía no han
+sido materializados por el worker.
+
+---
+
+## 4. POST /api/prestamos/
+
+Registra un préstamo de un ejemplar físico a un
+estudiante o docente.
+
+### Solicitud
 
 ```json
 {
   "usuario_id": 5,
-  "ejemplar_id": 2
+  "ejemplar_id": 12
 }
 ```
 
-Ambos campos son enteros positivos obligatorios. No se admiten campos extra, fechas, estados ni datos de multa: los calcula el servidor.
+Ambos campos son obligatorios y deben ser enteros positivos.
 
-**HTTP 201 Created (ejemplo abreviado con estructura real):**
+No se admiten campos extra, fechas ni estados.
+
+### Respuesta HTTP 201
 
 ```json
 {
@@ -142,8 +306,8 @@ Ambos campos son enteros positivos obligatorios. No se admiten campos extra, fec
   "usuario_id": 5,
   "usuario": {
     "usuario_id": 5,
-    "nombre": "Lector de ejemplo",
-    "email": "lector@example.com",
+    "nombre": "Ana Pérez",
+    "email": "ana@example.com",
     "direccion": null,
     "telefono": null,
     "rol": {
@@ -152,69 +316,149 @@ Ambos campos son enteros positivos obligatorios. No se admiten campos extra, fec
       "limite_prestamos_activos": 5
     }
   },
-  "ejemplar_id": 2,
+  "ejemplar_id": 12,
   "ejemplar": {
-    "ejemplar_id": 2,
-    "libro_id": 1,
+    "ejemplar_id": 12,
+    "libro_id": 3,
     "libro": {
-      "libro_id": 1,
-      "titulo": "Libro de ejemplo",
-      "isbn": "9780000000001"
+      "libro_id": 3,
+      "titulo": "Ingeniería de Software",
+      "isbn": "9780000000456"
     },
-    "codigo_inventario": "EJ-002",
+    "codigo_inventario": "EJ-012",
     "estado": "ACTIVO"
   },
-  "fecha_prestamo": "2026-10-19",
-  "fecha_limite": "2026-11-18",
+  "fecha_prestamo": "2026-10-27",
+  "fecha_limite": "2026-11-26",
   "fecha_devolucion": null
 }
 ```
 
-El registro es transaccional: se bloquean las filas del usuario y del ejemplar, se repiten las comprobaciones y solamente entonces se guarda el préstamo. Si alguna condición falla, **no se crea el nuevo préstamo**. Antes de iniciar esa transacción el servicio puede registrar bloqueos automáticos que ya correspondan al usuario; esas sanciones no se revierten si el préstamo nuevo es rechazado.
+Los identificadores y fechas son ejemplos.
 
-**HTTP 409 Conflict, ejemplo:**
+### Reglas de registro
 
-```json
-{
-  "codigo": "BLOQUEO_VIGENTE",
-  "detail": "El usuario tiene un bloqueo temporal vigente."
-}
-```
+El servicio aplica bloqueos pendientes del lector
+cuando corresponda y después inicia una transacción.
 
-Los rechazos de negocio usan `{ "codigo": "...", "detail": "..." }`.
+Dentro de la transacción bloquea las filas del usuario
+y del ejemplar, vuelve a comprobar la elegibilidad
+y registra el préstamo únicamente si las condiciones
+continúan siendo válidas.
 
-## Códigos HTTP y restricciones
+La fecha límite es la fecha del servidor más
+30 días naturales.
 
-| HTTP | Casos principales |
+Si la operación es rechazada, no crea el nuevo préstamo.
+
+### Errores
+
+| HTTP | Situación |
 |---|---|
-| `200` | Consulta GET válida, incluso si el lector no es elegible |
-| `201` | Préstamo creado |
-| `400` | Identificadores inválidos, campos faltantes o desconocidos |
-| `401` | Sin sesión Bearer válida |
-| `403` | Sesión válida de rol distinto a `bibliotecario` |
-| `404` | Lector o ejemplar no encontrado |
-| `409` | `ROL_NO_HABILITADO`, `EJEMPLAR_NO_DISPONIBLE`, `EJEMPLAR_OCUPADO`, `LIMITE_PRESTAMOS`, `ADEUDO_PENDIENTE`, `BLOQUEO_VIGENTE` en el registro POST |
-| `405` | Método HTTP no permitido por la vista |
+| 400 | Datos incompletos, inválidos o no autorizados |
+| 401 | Sesión no válida |
+| 403 | Rol no autorizado |
+| 404 | Usuario o ejemplar inexistente |
+| 409 | Conflicto de negocio |
 
-La elegibilidad GET devuelve `200` con `elegible: false` en conflictos de negocio; **no utiliza `409` para esos casos**. Los errores conocidos de recurso inexistente sí producen `404`.
+Los errores de conflicto incluyen `codigo` y `detail`.
 
-## Reglas de bloqueos (3.7)
+Los códigos de rechazo de negocio son:
 
-- P-04: si el préstamo sigue sin devolver al cumplirse **un mes calendario** desde `fecha_limite`, se aplica un bloqueo de 30 días naturales, con inicio y fin **inclusivos**.
-- RN-18: una sanción `BLOQUEO` tiene fechas de inicio y fin y `monto` y `fecha_pago` nulos.
-- La consulta GET no registra sanciones; el worker realiza revisiones automáticas y el POST de préstamos aplica bloqueos pendientes antes de intentar registrar un préstamo.
-- Repetir la revisión o el intento POST no debe duplicar la sanción ni reiniciar el intervalo.
+- `ROL_NO_HABILITADO`
+- `EJEMPLAR_NO_DISPONIBLE`
+- `EJEMPLAR_OCUPADO`
+- `LIMITE_PRESTAMOS`
+- `ADEUDO_PENDIENTE`
+- `BLOQUEO_VIGENTE`
 
-## Código relacionado, integración y pruebas
+---
 
-- Rutas: `backend/biblioteca/urls.py`.
-- Vistas y serializers: `presentation/prestamos_views.py` y `presentation/prestamos_serializers.py`.
-- Reglas: `services/prestamos_service.py` y `services/bloqueos_service.py`.
-- Frontend: `frontend/src/app/features/prestamos/services/prestamos.service.ts`.
-- Pruebas: `backend/biblioteca/tests/` (módulos de préstamos y bloqueos).
+## 5. Relación con otros módulos
 
-```bash
-docker compose exec -T backend python manage.py test biblioteca.tests --verbosity 1
-```
+### Catálogo
 
-**Dependencias:** usuarios con roles válidos, ejemplares registrados, disponibilidad calculada desde préstamos activos y sanciones económicas o bloqueos vigentes.
+Los ejemplares con préstamo activo no se cuentan
+como disponibles.
+
+Un préstamo vencido sigue ocupando el ejemplar.
+
+### Devoluciones (3.6)
+
+La devolución registra `fecha_devolucion` y cierra
+el préstamo. El listado administrativo refleja
+automáticamente el estado `DEVUELTO`.
+
+La devolución se realiza mediante su endpoint propio.
+
+### Bloqueos (3.7)
+
+Cuando un préstamo permanece sin devolver durante
+un mes calendario después de su fecha límite, puede
+generarse un bloqueo de 30 días naturales.
+
+La consulta administrativa no genera bloqueos ni
+modifica sanciones.
+
+### Sanciones y pagos (3.8)
+
+Las multas se calculan y registran desde los procesos
+correspondientes de devolución y sanciones.
+
+El listado administrativo de préstamos no permite
+registrar pagos.
+
+### Consultas personales (3.9)
+
+Estudiantes y docentes utilizan
+`GET /api/prestamos/mios/`.
+
+No pueden consultar los préstamos de otros usuarios.
+
+---
+
+## 6. Implementación
+
+### Backend
+
+- `repositories/prestamos_repository.py`
+- `repositories/prestamos_admin_repository.py`
+- `services/prestamos_service.py`
+- `services/prestamos_admin_service.py`
+- `presentation/prestamos_serializers.py`
+- `presentation/prestamos_admin_serializers.py`
+- `presentation/prestamos_views.py`
+- `urls.py`
+
+### Frontend
+
+- `features/prestamos/pages/registro-prestamo/`
+- `features/prestamos/pages/historial-prestamos/`
+- `features/prestamos/services/prestamos.service.ts`
+- `features/prestamos/services/prestamos-admin.service.ts`
+
+### Pruebas
+
+- `biblioteca.tests.test_prestamos_base`
+- `biblioteca.tests.test_prestamos_reglas`
+- `biblioteca.tests.test_prestamos_api`
+- `biblioteca.tests.test_prestamos_admin`
+
+### Postman
+
+Colección única:
+
+`Documentacion/Postman/BiblioTech_Prestamos_Completo.postman_collection.json`
+
+Incluye autenticación, listado administrativo,
+filtros, errores, permisos y operaciones existentes.
+
+## 7. Alcance de la ampliación
+
+El listado administrativo es exclusivamente de lectura.
+
+No incorpora renovaciones, devoluciones, generación
+de multas, pagos ni cambios de estado manuales.
+
+No requiere nuevas migraciones ni modificaciones
+del modelo de datos.

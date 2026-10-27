@@ -1,0 +1,469 @@
+<section class="loans-admin-page">
+
+  <!-- ENCABEZADO -->
+
+  <header class="page-header">
+    <div class="page-heading">
+      <p class="eyebrow">
+        SGC ADMINISTRATIVO
+        <span>• CIRCULACIÓN Y PRÉSTAMOS</span>
+      </p>
+
+      <h1>Historial General de Préstamos</h1>
+
+      <p class="description">
+        Consulta los préstamos registrados en la biblioteca,
+        supervisa sus fechas límite y filtra por estado.
+      </p>
+    </div>
+
+    <a
+      routerLink="/prestamos"
+      class="primary-link"
+    >
+      <span aria-hidden="true">＋</span>
+      Registrar préstamo
+    </a>
+  </header>
+
+  <!-- INDICADORES GENERALES -->
+
+  <section
+    class="summary-grid"
+    aria-label="Resumen general de préstamos"
+  >
+    <article class="summary-card">
+      <div class="summary-icon" aria-hidden="true">
+        ▣
+      </div>
+
+      <span>Total de préstamos</span>
+
+      <strong>{{ resumen().total }}</strong>
+
+      <p>Registros históricos</p>
+    </article>
+
+    <article class="summary-card summary-card--active">
+      <div class="summary-icon" aria-hidden="true">
+        ✓
+      </div>
+
+      <span>En préstamo</span>
+
+      <strong>{{ resumen().en_prestamo }}</strong>
+
+      <p>Dentro del plazo</p>
+    </article>
+
+    <article class="summary-card summary-card--overdue">
+      <div class="summary-icon" aria-hidden="true">
+        !
+      </div>
+
+      <span>Préstamos vencidos</span>
+
+      <strong>{{ resumen().vencidos }}</strong>
+
+      <p>Pendientes fuera de plazo</p>
+    </article>
+
+    <article class="summary-card summary-card--returned">
+      <div class="summary-icon" aria-hidden="true">
+        ↺
+      </div>
+
+      <span>Préstamos devueltos</span>
+
+      <strong>{{ resumen().devueltos }}</strong>
+
+      <p>Operaciones finalizadas</p>
+    </article>
+  </section>
+
+  <!-- FILTROS -->
+
+  <section
+    class="filter-panel"
+    aria-labelledby="titulo-filtros"
+  >
+    <div class="filter-heading">
+      <div>
+        <h2 id="titulo-filtros">
+          Consultar préstamos
+        </h2>
+
+        <p>
+          Busca por lector, folio, libro, ISBN
+          o código de ejemplar.
+        </p>
+      </div>
+
+      <button
+        type="button"
+        class="text-button"
+        [disabled]="cargando()"
+        (click)="limpiarFiltros()"
+      >
+        Limpiar filtros
+      </button>
+    </div>
+
+    <div class="filter-fields">
+      <form
+        class="search-form"
+        (ngSubmit)="buscar()"
+      >
+        <label for="buscar-prestamos">
+          Buscar préstamo
+        </label>
+
+        <div class="search-control">
+          <span class="search-icon" aria-hidden="true">
+            ⌕
+          </span>
+
+          <input
+            id="buscar-prestamos"
+            type="search"
+            [formControl]="busqueda"
+            placeholder="Nombre, correo, título, ISBN, ejemplar o folio"
+            autocomplete="off"
+          />
+
+          <button
+            type="submit"
+            [disabled]="cargando()"
+          >
+            Buscar
+          </button>
+        </div>
+      </form>
+
+      <div class="status-filter">
+        <label for="estado-prestamos">
+          Estado del préstamo
+        </label>
+
+        <select
+          id="estado-prestamos"
+          [value]="estado()"
+          [disabled]="cargando()"
+          (change)="cambiarEstado($any($event.target).value)"
+        >
+          @for (
+            opcion of estados;
+            track opcion.valor
+          ) {
+            <option [value]="opcion.valor">
+              {{ opcion.etiqueta }}
+            </option>
+          }
+        </select>
+      </div>
+
+      <button
+        type="button"
+        class="refresh-button"
+        [disabled]="cargando()"
+        (click)="actualizar()"
+      >
+        <span aria-hidden="true">↻</span>
+        Actualizar
+      </button>
+    </div>
+  </section>
+
+  <!-- LISTADO -->
+
+  <section
+    class="table-section"
+    aria-labelledby="titulo-listado"
+  >
+    <header class="table-heading">
+      <div>
+        <h2 id="titulo-listado">
+          Préstamos registrados
+        </h2>
+
+        <p>
+          Información obtenida directamente
+          del sistema bibliotecario.
+        </p>
+      </div>
+
+      <span class="result-count">
+        {{ total() }}
+        {{
+          total() === 1
+            ? 'resultado'
+            : 'resultados'
+        }}
+      </span>
+    </header>
+
+    @if (cargando()) {
+      <div class="state-panel" role="status">
+        <span
+          class="loading-spinner"
+          aria-hidden="true"
+        ></span>
+
+        <p>Cargando préstamos registrados...</p>
+      </div>
+    } @else if (error(); as mensaje) {
+      <div
+        class="state-panel state-panel--error"
+        role="alert"
+      >
+        <strong>
+          No fue posible consultar los préstamos
+        </strong>
+
+        <p>{{ mensaje }}</p>
+
+        <button
+          type="button"
+          class="secondary-button"
+          (click)="actualizar()"
+        >
+          Reintentar
+        </button>
+      </div>
+    } @else if (prestamos().length === 0) {
+      <div class="state-panel">
+        <div class="empty-icon" aria-hidden="true">
+          ▣
+        </div>
+
+        <h3>No hay préstamos para mostrar</h3>
+
+        <p>
+          No se encontraron registros
+          que coincidan con los filtros seleccionados.
+        </p>
+
+        <button
+          type="button"
+          class="secondary-button"
+          (click)="limpiarFiltros()"
+        >
+          Mostrar todos
+        </button>
+      </div>
+    } @else {
+
+      <div class="table-scroll">
+        <table>
+          <thead>
+            <tr>
+              <th scope="col">
+                Folio / Libro
+              </th>
+
+              <th scope="col">
+                Lector
+              </th>
+
+              <th scope="col">
+                Ejemplar
+              </th>
+
+              <th scope="col">
+                Fecha de préstamo
+              </th>
+
+              <th scope="col">
+                Fecha límite
+              </th>
+
+              <th scope="col">
+                Devolución
+              </th>
+
+              <th scope="col">
+                Estado
+              </th>
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (
+              prestamo of prestamos();
+              track prestamo.prestamo_id
+            ) {
+              <tr>
+                <!-- LIBRO -->
+
+                <td class="book-cell">
+                  <span class="folio">
+                    Préstamo #{{ prestamo.prestamo_id }}
+                  </span>
+
+                  <strong>
+                    {{ prestamo.libro.titulo }}
+                  </strong>
+
+                  <small>
+                    ISBN: {{ prestamo.libro.isbn }}
+                  </small>
+                </td>
+
+                <!-- LECTOR -->
+
+                <td class="reader-cell">
+                  <strong>
+                    {{ prestamo.usuario.nombre }}
+                  </strong>
+
+                  <small>
+                    {{ prestamo.usuario.email }}
+                  </small>
+
+                  <span class="role-tag">
+                    {{ prestamo.usuario.rol }}
+                  </span>
+                </td>
+
+                <!-- EJEMPLAR -->
+
+                <td>
+                  <span class="inventory-code">
+                    {{ prestamo.ejemplar.codigo_inventario }}
+                  </span>
+
+                  <small>
+                    ID: {{ prestamo.ejemplar.ejemplar_id }}
+                  </small>
+                </td>
+
+                <!-- FECHA DE PRÉSTAMO -->
+
+                <td>
+                  <span class="date-text">
+                    {{
+                      formatearFecha(
+                        prestamo.fecha_prestamo
+                      )
+                    }}
+                  </span>
+                </td>
+
+                <!-- FECHA LÍMITE -->
+
+                <td>
+                  <strong
+                    class="date-text"
+                    [class.date-text--overdue]="
+                      prestamo.estado === 'VENCIDO'
+                    "
+                  >
+                    {{
+                      formatearFecha(
+                        prestamo.fecha_limite
+                      )
+                    }}
+                  </strong>
+                </td>
+
+                <!-- FECHA DE DEVOLUCIÓN -->
+
+                <td>
+                  <span class="date-text">
+                    {{
+                      formatearFecha(
+                        prestamo.fecha_devolucion
+                      )
+                    }}
+                  </span>
+                </td>
+
+                <!-- ESTADO -->
+
+                <td>
+                  <span
+                    class="status-chip"
+                    [class.status-chip--active]="
+                      prestamo.estado === 'EN_PRESTAMO'
+                    "
+                    [class.status-chip--overdue]="
+                      prestamo.estado === 'VENCIDO'
+                    "
+                    [class.status-chip--returned]="
+                      prestamo.estado === 'DEVUELTO'
+                    "
+                  >
+                    <span
+                      class="status-dot"
+                      aria-hidden="true"
+                    ></span>
+
+                    {{
+                      etiquetaEstado(
+                        prestamo.estado
+                      )
+                    }}
+                  </span>
+
+                  <small
+                    class="status-detail"
+                    [class.status-detail--overdue]="
+                      prestamo.estado === 'VENCIDO'
+                    "
+                  >
+                    {{ detalleEstado(prestamo) }}
+                  </small>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <!-- PAGINACIÓN -->
+
+      <footer class="pagination">
+        <span>
+          Mostrando
+          {{ primerRegistro() }}–{{ ultimoRegistro() }}
+          de {{ total() }} registros
+        </span>
+
+        <div class="pagination-controls">
+          <button
+            type="button"
+            [disabled]="
+              pagina() === 1 || cargando()
+            "
+            (click)="paginaAnterior()"
+          >
+            Anterior
+          </button>
+
+          <strong>
+            Página {{ pagina() }}
+            de {{ totalPaginas() }}
+          </strong>
+
+          <button
+            type="button"
+            [disabled]="
+              pagina() >= totalPaginas() ||
+              cargando()
+            "
+            (click)="paginaSiguiente()"
+          >
+            Siguiente
+          </button>
+        </div>
+      </footer>
+    }
+  </section>
+
+  <p class="page-note">
+    Los estados de los préstamos se calculan automáticamente
+    según las fechas registradas. Esta pantalla es
+    exclusivamente de consulta.
+  </p>
+
+</section>

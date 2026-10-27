@@ -36,6 +36,7 @@
             class="nav-item"
             [routerLink]="item.route"
             routerLinkActive="nav-item--active"
+            [routerLinkActiveOptions]="{ exact: true }"
             (click)="cerrarSidebar()"
           >
             <span class="nav-icon" aria-hidden="true">

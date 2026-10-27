@@ -1,6 +1,7 @@
 import {
   CommonModule,
 } from '@angular/common';
+
 import {
   Component,
   computed,
@@ -10,19 +11,30 @@ import {
   OnInit,
   signal,
 } from '@angular/core';
+
 import {
   Router,
   RouterLink,
   RouterLinkActive,
   RouterOutlet,
 } from '@angular/router';
-import { finalize } from 'rxjs';
+
+import {
+  finalize,
+} from 'rxjs';
 
 import {
   UserRole,
 } from '../../core/auth/models/auth.models';
-import { AuthService } from '../../core/auth/services/auth.service';
-import { AuthSessionService } from '../../core/auth/services/auth-session.service';
+
+import {
+  AuthService,
+} from '../../core/auth/services/auth.service';
+
+import {
+  AuthSessionService,
+} from '../../core/auth/services/auth-session.service';
+
 
 export interface NavigationItem {
   label: string;
@@ -30,6 +42,7 @@ export interface NavigationItem {
   roles: UserRole[];
   icon: string;
 }
+
 
 @Component({
   selector: 'app-main-layout',
@@ -109,6 +122,12 @@ export class MainLayoutComponent implements OnInit {
       icon: 'admin-loans',
     },
     {
+      label: 'Historial de préstamos',
+      route: '/prestamos/historial',
+      roles: ['bibliotecario'],
+      icon: 'loans',
+    },
+    {
       label: 'Devoluciones',
       route: '/devoluciones',
       roles: ['bibliotecario'],
@@ -124,29 +143,43 @@ export class MainLayoutComponent implements OnInit {
 
   readonly visibleNavigation = computed(() => {
     const role = this.session.rol();
+
     if (!role) {
       return [];
     }
-    return this.navigation.filter((item) => item.roles.includes(role));
+
+    return this.navigation.filter(
+      (item) => item.roles.includes(role),
+    );
   });
 
   readonly roleLabel = computed(() => {
     const role = this.session.rol();
+
     const labels: Record<UserRole, string> = {
       estudiante: 'Estudiante',
       docente: 'Docente',
       bibliotecario: 'Bibliotecario',
     };
+
     return role ? labels[role] : '';
   });
 
   readonly userInitials = computed(() => {
     const name = this.session.usuario()?.nombre?.trim();
-    if (!name) return 'U';
-    const parts = name.split(/\s+/);
-    if (parts.length >= 2) {
-      return (parts[0][0] + parts[1][0]).toUpperCase();
+
+    if (!name) {
+      return 'U';
     }
+
+    const parts = name.split(/\s+/);
+
+    if (parts.length >= 2) {
+      return (
+        parts[0][0] + parts[1][0]
+      ).toUpperCase();
+    }
+
     return name.slice(0, 2).toUpperCase();
   });
 
@@ -155,7 +188,9 @@ export class MainLayoutComponent implements OnInit {
   }
 
   toggleMenuPerfil(): void {
-    this.menuPerfilAbierto.update((v) => !v);
+    this.menuPerfilAbierto.update(
+      (valor) => !valor,
+    );
   }
 
   cerrarMenuPerfil(): void {
@@ -163,7 +198,9 @@ export class MainLayoutComponent implements OnInit {
   }
 
   toggleSidebar(): void {
-    this.sidebarAbierto.update((v) => !v);
+    this.sidebarAbierto.update(
+      (valor) => !valor,
+    );
   }
 
   cerrarSidebar(): void {
@@ -175,9 +212,18 @@ export class MainLayoutComponent implements OnInit {
     if (!this.menuPerfilAbierto()) {
       return;
     }
+
     const target = event.target as HTMLElement;
-    const profileContainer = this.elementRef.nativeElement.querySelector('.profile-container');
-    if (profileContainer && !profileContainer.contains(target)) {
+
+    const profileContainer =
+      this.elementRef.nativeElement.querySelector(
+        '.profile-container',
+      );
+
+    if (
+      profileContainer &&
+      !profileContainer.contains(target)
+    ) {
       this.cerrarMenuPerfil();
     }
   }
@@ -187,6 +233,7 @@ export class MainLayoutComponent implements OnInit {
     if (this.menuPerfilAbierto()) {
       this.cerrarMenuPerfil();
     }
+
     if (this.sidebarAbierto()) {
       this.cerrarSidebar();
     }
@@ -198,18 +245,23 @@ export class MainLayoutComponent implements OnInit {
     }
 
     this.loggingOut.set(true);
+
     this.auth
       .logout()
       .pipe(
         finalize(() => {
           this.loggingOut.set(false);
           this.cerrarMenuPerfil();
-          void this.router.navigateByUrl('/login');
+
+          void this.router.navigateByUrl(
+            '/login',
+          );
         }),
       )
       .subscribe({
         error: () => {
-          // AuthService limpia la sesión local incluso ante fallos HTTP.
+          // AuthService limpia la sesión local
+          // incluso si falla la petición HTTP.
         },
       });
   }
