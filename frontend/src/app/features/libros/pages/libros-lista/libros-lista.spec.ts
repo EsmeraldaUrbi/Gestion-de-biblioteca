@@ -447,15 +447,18 @@ describe('LibrosListaComponent', () => {
       expect(enlaceEditar?.hasAttribute('disabled')).toBe(false);
     });
 
-    it('el enlace Ejemplares debe estar activo y apuntar a /libros/:id con fragmento ejemplares (Etapa 4)', () => {
+    it('no debe mostrar el enlace Ejemplares en las acciones de la tabla y debe incluir únicamente Ver y Editar', () => {
       fixture.detectChanges();
       const compiled = fixture.nativeElement as HTMLElement;
       const fila = compiled.querySelector('tbody tr');
-      const enlaceEjemplares = fila?.querySelector('.table-action-btn--secondary') as HTMLAnchorElement | null;
+      const enlaceEjemplares = fila?.querySelector('.table-action-btn--secondary');
 
-      expect(enlaceEjemplares).toBeTruthy();
-      expect(enlaceEjemplares?.tagName.toLowerCase()).toBe('a');
-      expect(enlaceEjemplares?.hasAttribute('disabled')).toBe(false);
+      expect(enlaceEjemplares).toBeNull();
+
+      const botonesAcciones = fila?.querySelectorAll('.action-buttons-group a');
+      expect(botonesAcciones?.length).toBe(2);
+      expect(botonesAcciones?.[0].textContent?.trim()).toBe('Ver');
+      expect(botonesAcciones?.[1].textContent?.trim()).toBe('Editar');
     });
   });
 
