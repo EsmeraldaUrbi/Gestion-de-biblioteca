@@ -24,15 +24,28 @@ class DjangoSancionesRepository:
         sanciones = self._base_queryset()
 
         if termino:
-            sanciones = sanciones.filter(
+            filtros = (
                 Q(prestamo__usuario__nombre__icontains=termino)
                 | Q(prestamo__usuario__email__icontains=termino)
                 | Q(prestamo__ejemplar__libro__titulo__icontains=termino)
                 | Q(prestamo__ejemplar__libro__isbn__icontains=termino)
                 | Q(prestamo__ejemplar__codigo_inventario__icontains=termino)
-                | Q(sancion_id__icontains=termino)
-                | Q(prestamo_id__icontains=termino)
             )
+
+            # Los identificadores se buscan por coincidencia exacta.
+            if (
+                termino.isascii()
+                and termino.isdecimal()
+                and len(termino) <= 10
+            ):
+                identificador = int(termino)
+
+                filtros |= (
+                    Q(sancion_id=identificador)
+                    | Q(prestamo__prestamo_id=identificador)
+                )
+
+            sanciones = sanciones.filter(filtros)
 
         if tipo != 'todos':
             sanciones = sanciones.filter(tipo=tipo)
